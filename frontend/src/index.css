@@ -1,5 +1,44 @@
-/* :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+@font-face {
+  font-family: "Gotham-Medium";
+  src:
+    url("/fonts/Gotham-Medium.woff2") format("woff2"),
+    url("/fonts/Gotham-Medium.woff") format("woff");
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Gotham-Bold";
+  src:
+    url("/fonts/Gotham-Bold.woff2") format("woff2"),
+    url("/fonts/Gotham-Bold.woff") format("woff");
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Gotham-Black";
+  src:
+    url("/fonts/Gotham-Black.woff2") format("woff2"),
+    url("/fonts/Gotham-Black.woff") format("woff");
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Gotham-Light";
+  src:
+    url("/fonts/Gotham-Light.woff2") format("woff2"),
+    url("/fonts/Gotham-Light.woff") format("woff");
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Gotham-Thin";
+  src:
+    url("/fonts/Gotham-Thin.woff2") format("woff2"),
+    url("/fonts/Gotham-Thin.woff") format("woff");
+  font-style: normal;
+}
+:root {
+  font-family: "Gotham-Medium", system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -61,4 +100,4 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
-} */
+}

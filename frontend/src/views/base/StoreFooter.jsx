@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 
 function StoreFooter() {
   return (
@@ -67,10 +67,10 @@ function StoreFooter() {
                 <strong>About us</strong>
               </p>
               <p>
-                Lorem ipsum dolor sit amet consectetur, adipisicing elit. Iste atque
-                ea quis molestias. Fugiat pariatur maxime quis culpa corporis vitae
-                repudiandae aliquam voluptatem veniam, est atque cumque eum delectus
-                sint!
+                Lorem ipsum dolor sit amet consectetur, adipisicing elit. Iste
+                atque ea quis molestias. Fugiat pariatur maxime quis culpa
+                corporis vitae repudiandae aliquam voluptatem veniam, est atque
+                cumque eum delectus sint!
               </p>
             </div>
             {/*Grid column*/}
@@ -170,16 +170,15 @@ function StoreFooter() {
           className="text-center p-3"
           style={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
         >
-          © 2020 Copyright:
+          © 2025 Copyright:
           <a className="text-dark" href="https://mdbootstrap.com/">
-            MDBootstrap.com
+            Viktorija Deksne
           </a>
         </div>
         {/* Copyright */}
       </footer>
-
     </div>
-  )
+  );
 }
 
-export default StoreFooter
+export default StoreFooter;

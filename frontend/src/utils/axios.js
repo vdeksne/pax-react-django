@@ -1,8 +1,6 @@
 // Import the Axios library to make HTTP requests. Axios is a popular JavaScript library for this purpose.
 import axios from "axios";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1/";
+import { API_BASE_URL } from "./constants";
 
 // Create an instance of Axios and store it in the 'apiInstance' variable. This instance will have specific configuration options.
 const apiInstance = axios.create({

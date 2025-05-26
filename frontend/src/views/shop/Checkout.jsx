@@ -1,107 +1,126 @@
-import { React, useEffect, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import Swal from 'sweetalert2'
-import { API_BASE_URL, PAYPAL_CLIENT_ID, SERVER_URL } from '../../utils/constants';
+import Swal from "sweetalert2";
+import { API_BASE_URL, PAYPAL_CLIENT_ID } from "../../utils/constants";
 
-
-import apiInstance from '../../utils/axios';
-import GetCurrentAddress from '../plugin/UserCountry';
-import UserData from '../plugin/UserData';
-import CartID from '../plugin/cartID';
-
-
+import apiInstance from "../../utils/axios";
+import UserData from "../plugin/UserData";
+import CartID from "../plugin/cartID";
 
 function Checkout() {
-  const [order, setOrder] = useState([])
-  const [couponCode, setCouponCode] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [order, setOrder] = useState({
+    oid: "",
+    full_name: "",
+    email: "",
+    mobile: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    sub_total: 0,
+    shipping_amount: 0,
+    tax_fee: 0,
+    service_fee: 0,
+    total: 0,
+  });
+  const [couponCode, setCouponCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
-  const axios = apiInstance
-  const userData = UserData()
-  let cart_id = CartID()
-  const param = useParams()
+  const axios = apiInstance;
+  const param = useParams();
   let navigate = useNavigate();
 
-
-
   useEffect(() => {
-    axios.get(`checkout/${param?.order_oid}/`).then((res) => {
-      setOrder(res.data);
-    })
-  }, [loading])
-
+    axios.get(`checkout/${param?.order_oid || ""}/`).then((res) => {
+      setOrder(res.data || {});
+    });
+  }, [loading]);
 
   const initialOptions = {
-    clientId: PAYPAL_CLIENT_ID,
+    clientId: PAYPAL_CLIENT_ID || "",
     currency: "USD",
     intent: "capture",
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     switch (name) {
       case "couponCode":
-        setCouponCode(value)
+        setCouponCode(value || "");
         break;
 
       default:
         break;
     }
-  }
+  };
 
   const appleCoupon = async () => {
     console.log(couponCode);
-    setLoading(true)
+    setLoading(true);
 
-    const formdata = new FormData()
-    formdata.append("order_oid", order.oid)
-    formdata.append("coupon_code", couponCode)
+    const formdata = new FormData();
+    formdata.append("order_oid", order.oid || "");
+    formdata.append("coupon_code", couponCode || "");
 
     try {
-      const response = await axios.post('coupon/', formdata)
+      const response = await axios.post("coupon/", formdata);
       console.log(response.data);
       if (response.data.message === "Coupon Activated") {
-        setLoading(false)
+        setLoading(false);
 
         Swal.fire({
-          icon: 'success',
+          icon: "success",
           title: response.data.message,
           text: "A new coupon has been applied to your order",
-        })
+        });
       }
 
       if (response.data.message === "Coupon Already Activated") {
-        setLoading(false)
+        setLoading(false);
 
         Swal.fire({
-          icon: 'warning',
+          icon: "warning",
           title: response.data.message,
           text: "This coupon has been already activated!",
-        })
+        });
       }
-      setCouponCode("")
-
+      setCouponCode("");
     } catch (error) {
-      console.log(error.response.data.message);
-      setLoading(false)
+      console.log(error.response?.data?.message);
+      setLoading(false);
       Swal.fire({
-        icon: 'error',
-        title: error.response.data.message,
+        icon: "error",
+        title: error.response?.data?.message || "Error",
         text: "This coupon does not exist!",
-      })
-      setCouponCode("")
-
+      });
+      setCouponCode("");
     }
-
-  }
+  };
 
   const payWithStripe = (event) => {
-    setPaymentLoading(true)
+    setPaymentLoading(true);
     event.target.form.submit();
-  }
+  };
 
+  if ((order.total || 0) < 0.5) {
+    return (
+      <div className="container mt-5">
+        <div className="alert alert-danger">
+          Your order total must be at least $0.50 to proceed to checkout.
+          <br />
+          Please add more items to your cart and try again.
+        </div>
+        <button
+          className="btn btn-primary"
+          onClick={() => (window.location.href = "/shop")}
+        >
+          Go Back to Shop
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -121,93 +140,135 @@ function Checkout() {
                       <h5 className="mb-4 mt-4">Shipping address</h5>
                       {/* 2 column grid layout with text inputs for the first and last names */}
                       <div className="row mb-4">
-
                         <div className="col-lg-12">
                           <div className="form-outline">
-                            <label className="form-label" htmlFor="form6Example2">Full Name</label>
+                            <label
+                              className="form-label"
+                              htmlFor="form6Example2"
+                            >
+                              Full Name
+                            </label>
                             <input
                               type="text"
                               readOnly
                               className="form-control"
-                              value={order.full_name}
+                              value={order.full_name || ""}
                             />
                           </div>
                         </div>
 
                         <div className="col-lg-6 mt-4">
                           <div className="form-outline">
-                            <label className="form-label" htmlFor="form6Example2">Email</label>
+                            <label
+                              className="form-label"
+                              htmlFor="form6Example2"
+                            >
+                              Email
+                            </label>
                             <input
                               type="text"
                               readOnly
                               className="form-control"
-                              value={order.email}
+                              value={order.email || ""}
                             />
                           </div>
                         </div>
 
                         <div className="col-lg-6 mt-4">
                           <div className="form-outline">
-                            <label className="form-label" htmlFor="form6Example2">Mobile</label>
+                            <label
+                              className="form-label"
+                              htmlFor="form6Example2"
+                            >
+                              Mobile
+                            </label>
                             <input
                               type="text"
                               readOnly
                               className="form-control"
-                              value={order.mobile}
+                              value={order.mobile || ""}
                             />
                           </div>
                         </div>
                         <div className="col-lg-6 mt-4">
                           <div className="form-outline">
-                            <label className="form-label" htmlFor="form6Example2">Address</label>
+                            <label
+                              className="form-label"
+                              htmlFor="form6Example2"
+                            >
+                              Address
+                            </label>
                             <input
                               type="text"
                               readOnly
                               className="form-control"
-                              value={order.address}
+                              value={order.address || ""}
                             />
                           </div>
                         </div>
                         <div className="col-lg-6 mt-4">
                           <div className="form-outline">
-                            <label className="form-label" htmlFor="form6Example2">City</label>
+                            <label
+                              className="form-label"
+                              htmlFor="form6Example2"
+                            >
+                              City
+                            </label>
                             <input
                               type="text"
                               readOnly
                               className="form-control"
-                              value={order.city}
+                              value={order.city || ""}
                             />
                           </div>
                         </div>
                         <div className="col-lg-6 mt-4">
                           <div className="form-outline">
-                            <label className="form-label" htmlFor="form6Example2">State</label>
+                            <label
+                              className="form-label"
+                              htmlFor="form6Example2"
+                            >
+                              State
+                            </label>
                             <input
                               type="text"
                               readOnly
                               className="form-control"
-                              value={order.state}
+                              value={order.state || ""}
                             />
                           </div>
                         </div>
                         <div className="col-lg-6 mt-4">
                           <div className="form-outline">
-                            <label className="form-label" htmlFor="form6Example2">Country</label>
+                            <label
+                              className="form-label"
+                              htmlFor="form6Example2"
+                            >
+                              Country
+                            </label>
                             <input
                               type="text"
                               readOnly
                               className="form-control"
-                              value={order.country}
+                              value={order.country || ""}
                             />
                           </div>
                         </div>
                       </div>
 
-
                       <h5 className="mb-4 mt-4">Billing address</h5>
                       <div className="form-check mb-2">
-                        <input className="form-check-input me-2" type="checkbox" defaultValue="" id="form6Example8" defaultChecked="" />
-                        <label className="form-check-label" htmlFor="form6Example8">
+                        <input
+                          className="form-check-input me-2"
+                          type="checkbox"
+                          defaultValue=""
+                          id="form6Example8"
+                          defaultChecked=""
+                        />
+                        <label
+                          className="form-check-label"
+                          htmlFor="form6Example8"
+                        >
                           Same as shipping address
                         </label>
                       </div>
@@ -221,80 +282,133 @@ function Checkout() {
                     <h5 className="mb-3">Cart Summary</h5>
                     <div className="d-flex justify-content-between mb-3">
                       <span>Subtotal </span>
-                      <span>${order.sub_total}</span>
+                      <span>${order.sub_total || 0}</span>
                     </div>
                     <div className="d-flex justify-content-between">
                       <span>Shipping </span>
-                      <span>${order.shipping_amount}</span>
+                      <span>${order.shipping_amount || 0}</span>
                     </div>
                     <div className="d-flex justify-content-between">
                       <span>Tax </span>
-                      <span>${order.tax_fee}</span>
+                      <span>${order.tax_fee || 0}</span>
                     </div>
                     <div className="d-flex justify-content-between">
                       <span>Servive Fee </span>
-                      <span>${order.service_fee}</span>
+                      <span>${order.service_fee || 0}</span>
                     </div>
                     <hr className="my-4" />
                     <div className="d-flex justify-content-between fw-bold mb-5">
                       <span>Total </span>
-                      <span>${order.total}</span>
+                      <span>${order.total || 0}</span>
                     </div>
 
                     <div className="shadow p-3 d-flex mt-4 mb-4">
-                      {loading === true &&
+                      {loading === true && (
                         <>
-                          <input readOnly value={couponCode} name="couponCode" type="text" className='form-control' style={{ border: "dashed 1px gray" }} placeholder='Enter Coupon Code' id="" />
-                          <button disabled className='btn btn-success ms-1'><i className='fas fa-spinner fa-spin'></i></button>
+                          <input
+                            readOnly
+                            value={couponCode || ""}
+                            name="couponCode"
+                            type="text"
+                            className="form-control"
+                            style={{ border: "dashed 1px gray" }}
+                            placeholder="Enter Coupon Code"
+                            id=""
+                          />
+                          <button disabled className="btn btn-success ms-1">
+                            <i className="fas fa-spinner fa-spin"></i>
+                          </button>
                         </>
-                      }
+                      )}
 
-                      {loading === false &&
+                      {loading === false && (
                         <>
-                          <input onChange={handleChange} value={couponCode} name="couponCode" type="text" className='form-control' style={{ border: "dashed 1px gray" }} placeholder='Enter Coupon Code' id="" />
-                          <button onClick={appleCoupon} className='btn btn-success ms-1'><i className='fas fa-check-circle'></i></button>
+                          <input
+                            onChange={handleChange}
+                            value={couponCode || ""}
+                            name="couponCode"
+                            type="text"
+                            className="form-control"
+                            style={{ border: "dashed 1px gray" }}
+                            placeholder="Enter Coupon Code"
+                            id=""
+                          />
+                          <button
+                            onClick={appleCoupon}
+                            className="btn btn-success ms-1"
+                          >
+                            <i className="fas fa-check-circle"></i>
+                          </button>
                         </>
-                      }
+                      )}
                     </div>
 
-                    {paymentLoading === true &&
-                      <form action={`${API_BASE_URL}stripe-checkout/${param?.order_oid}/`} method='POST'>
-                        <button onClick={payWithStripe} type="submit" className="btn btn-primary btn-rounded w-100 mt-2" style={{ backgroundColor: "#635BFF" }}>Processing... <i className='fas fa-spinner fa-spin'></i> </button>
+                    {paymentLoading === true && (
+                      <form
+                        action={`${API_BASE_URL}stripe-checkout/${
+                          param?.order_oid || ""
+                        }/`}
+                        method="POST"
+                      >
+                        <button
+                          onClick={payWithStripe}
+                          type="submit"
+                          className="btn btn-primary btn-rounded w-100 mt-2"
+                          style={{ backgroundColor: "#635BFF" }}
+                        >
+                          Processing...{" "}
+                          <i className="fas fa-spinner fa-spin"></i>{" "}
+                        </button>
                       </form>
-                    }
+                    )}
 
-                    {paymentLoading === false &&
-                      <form action={`${API_BASE_URL}stripe-checkout/${param?.order_oid}/`} method='POST'>
-                        <button onClick={payWithStripe} type="submit" className="btn btn-primary btn-rounded w-100 mt-2" style={{ backgroundColor: "#635BFF" }}>Pay Now (Stripe)</button>
+                    {paymentLoading === false && (
+                      <form
+                        action={`${API_BASE_URL}stripe-checkout/${
+                          param?.order_oid || ""
+                        }/`}
+                        method="POST"
+                      >
+                        <button
+                          onClick={payWithStripe}
+                          type="submit"
+                          className="btn btn-primary btn-rounded w-100 mt-2"
+                          style={{ backgroundColor: "#635BFF" }}
+                        >
+                          Pay Now (Stripe)
+                        </button>
                       </form>
-                    }
+                    )}
 
                     <PayPalScriptProvider options={initialOptions}>
-                      <PayPalButtons className='mt-3'
+                      <PayPalButtons
+                        className="mt-3"
                         createOrder={(data, actions) => {
                           return actions.order.create({
                             purchase_units: [
                               {
                                 amount: {
                                   currency_code: "USD",
-                                  value: order.total.toString()
-                                }
-                              }
-                            ]
-                          })
+                                  value: (order.total || 0).toString(),
+                                },
+                              },
+                            ],
+                          });
                         }}
-
                         onApprove={(data, actions) => {
                           return actions.order.capture().then((details) => {
-                            const name = details.payer.name.given_name;
                             const status = details.status;
                             const payapl_order_id = data.orderID;
 
                             console.log(status);
                             if (status === "COMPLETED") {
-                              navigate(`/payment-success/${order.oid}/?payapl_order_id=${payapl_order_id}`)
+                              navigate(
+                                `/payment-success/${
+                                  order.oid || ""
+                                }/?payapl_order_id=${payapl_order_id || ""}`
+                              );
                             }
-                          })
+                          });
                         }}
                       />
                     </PayPalScriptProvider>
@@ -310,7 +424,7 @@ function Checkout() {
         </main>
       </main>
     </div>
-  )
+  );
 }
 
-export default Checkout
+export default Checkout;

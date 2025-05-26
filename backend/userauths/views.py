@@ -130,7 +130,7 @@ class PasswordEmailVerify(generics.RetrieveAPIView):
             user.reset_token = reset_token
             user.save()
 
-            link = f"http://localhost:5173/create-new-password?otp={user.otp}&uidb64={uidb64}&reset_token={reset_token}"
+            link = f"http://127.0.0.1:8000/create-new-password?otp={user.otp}&uidb64={uidb64}&reset_token={reset_token}"
             
             merge_data = {
                 'link': link, 
