@@ -32,8 +32,14 @@ SECRET_KEY = 'django-insecure-b*tuoe%^o+=^35$0fufrm=oamh^(o0tabn39(7ni12(i-oup+4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["website-domain.com", "127.0.0.1"]
-CSRF_TRUSTED_ORIGINS = ['https://website-domain.com', 'https://127.0.0.1']
+ALLOWED_HOSTS = [
+    "desirable-communication-production.up.railway.app",
+    "127.0.0.1",
+]
+CSRF_TRUSTED_ORIGINS = [
+    'https://desirable-communication-production.up.railway.app',
+    'http://127.0.0.1',
+]
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
 
@@ -116,6 +122,14 @@ DATABASES = {
 
 db_from_env = dj_database_url.config(conn_max_age=600)
 DATABASES['default'].update(db_from_env)
+
+# if os.environ.get("DJANGO_DEVELOPMENT") == "True":
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.sqlite3",
+#             "NAME": BASE_DIR / "db.sqlite3",
+#         }
+#     }
 
 
 # Password validation
