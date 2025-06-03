@@ -16,9 +16,15 @@ class ConfigSettingsSerializer(serializers.ModelSerializer):
 
 # Define a serializer for the Category model
 class CategorySerializer(serializers.ModelSerializer):
+    products = serializers.SerializerMethodField()
+    
     class Meta:
         model = Category
         fields = '__all__'
+    
+    def get_products(self, obj):
+        products = Product.objects.filter(category=obj)
+        return ProductSerializer(products, many=True).data
 
 # Define a serializer for the Tag model
 class TagSerializer(serializers.ModelSerializer):

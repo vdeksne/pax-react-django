@@ -1,9 +1,6 @@
-import { React, useEffect, useState, useContext } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-
-// Icons
-import { FaCheckCircle } from "react-icons/fa";
 
 import { addToCart } from "../plugin/AddToCart";
 import apiInstance from "../../utils/axios";
@@ -16,7 +13,7 @@ function Cart() {
   const [cart, setCart] = useState([]);
   const [cartTotal, setCartTotal] = useState([]);
   const [productQuantities, setProductQuantities] = useState({});
-  let [isAddingToCart, setIsAddingToCart] = useState("");
+  let [isAddingToCart] = useState("");
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,7 +22,7 @@ function Cart() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [country, setCountry] = useState("");
-  const [cartCount, setCartCount] = useContext(CartContext);
+  const [setCartCount] = useContext(CartContext);
 
   const axios = apiInstance;
   const userData = UserData();
@@ -229,12 +226,12 @@ function Cart() {
               {/* Section: Cart */}
               <section className="">
                 <div className="row gx-lg-5 mb-5">
-                  <div className="col-lg-8 mb-4 mb-md-0">
+                  <div className="col-lg-8 mb-4 mb-md-0 text-start">
                     {/* Section: Product list */}
                     <section className="mb-5">
                       {cart.map((c) => (
                         <div key={c.id} className="row border-bottom mb-4">
-                          <div className="col-md-2 mb-4 mb-md-0">
+                          <div className="col-md-2 mb-4 mb-md-0 text-start">
                             <div
                               className="bg-image ripple rounded-5 mb-4 overflow-hidden d-block"
                               data-ripple-color="light"
@@ -264,12 +261,12 @@ function Cart() {
                               </a>
                             </div>
                           </div>
-                          <div className="col-md-8 mb-4 mb-md-0">
+                          <div className="col-md-8 mb-4 mb-md-0 text-start">
                             <Link
                               to={`/detail/${c.product.slug}`}
                               className="fw-bold text-dark mb-4"
                             >
-                              {c?.product?.title.slice(0, 20)}...
+                              {c?.product?.title.slice(0, 20)}
                             </Link>
                             {c.size != "No Size" && (
                               <p className="mb-0">
@@ -300,7 +297,7 @@ function Cart() {
                             <p className="mt-3">
                               <button
                                 onClick={() => handleDeleteClick(cart_id, c.id)}
-                                className="btn btn-danger "
+                                className="btn-main-pricing "
                               >
                                 <small>
                                   <i className="fas fa-trash me-2" />
@@ -309,7 +306,7 @@ function Cart() {
                               </button>
                             </p>
                           </div>
-                          <div className="col-md-2 mb-4 mb-md-0">
+                          <div className="col-md-2 mb-4 mb-md-0 text-start">
                             <div className="d-flex justify-content-center align-items-center">
                               <div className="form-outline">
                                 <input
@@ -362,10 +359,16 @@ function Cart() {
                         </>
                       )}
                     </section>
-                    <div>
+                    <div
+                      className="text-start cart-txt"
+                      style={{ color: "black", backgroundColor: "white" }}
+                    >
                       <h5 className="mb-4 mt-4">Personal Information</h5>
                       {/* 2 column grid layout with text inputs for the first and last names */}
-                      <div className="row mb-4">
+                      <div
+                        className="row mb-4"
+                        style={{ color: "black", backgroundColor: "white" }}
+                      >
                         <div className="col">
                           <div className="form-outline">
                             <label className="form-label" htmlFor="full_name">
@@ -376,9 +379,13 @@ function Cart() {
                               type="text"
                               id=""
                               name="fullName"
-                              className="form-control"
+                              className="form-control input text-dark"
                               onChange={handleChange}
                               value={fullName}
+                              style={{
+                                color: "black",
+                                backgroundColor: "white",
+                              }}
                             />
                           </div>
                         </div>
@@ -396,7 +403,7 @@ function Cart() {
                             <input
                               type="text"
                               id="form6Example1"
-                              className="form-control"
+                              className="form-control input text-dark"
                               name="email"
                               onChange={handleChange}
                               value={email}
@@ -414,7 +421,7 @@ function Cart() {
                             <input
                               type="text"
                               id="form6Example1"
-                              className="form-control"
+                              className="form-control input text-dark"
                               name="mobile"
                               onChange={handleChange}
                               value={mobile}
@@ -438,7 +445,7 @@ function Cart() {
                             <input
                               type="text"
                               id="form6Example1"
-                              className="form-control"
+                              className="form-control input text-dark"
                               name="address"
                               onChange={handleChange}
                               value={address}
@@ -457,7 +464,7 @@ function Cart() {
                             <input
                               type="text"
                               id="form6Example1"
-                              className="form-control"
+                              className="form-control input text-dark"
                               name="city"
                               onChange={handleChange}
                               value={city}
@@ -477,7 +484,7 @@ function Cart() {
                             <input
                               type="text"
                               id="form6Example1"
-                              className="form-control"
+                              className="form-control input text-dark"
                               name="state"
                               onChange={handleChange}
                               value={state}
@@ -496,7 +503,7 @@ function Cart() {
                             <input
                               type="text"
                               id="form6Example1"
-                              className="form-control"
+                              className="form-control input text-dark"
                               name="country"
                               onChange={handleChange}
                               value={country}
@@ -509,7 +516,7 @@ function Cart() {
                   <div className="col-lg-4 mb-4 mb-md-0">
                     {/* Section: Summary */}
                     <section className="shadow-4 p-4 rounded-5 mb-4">
-                      <h5 className="mb-3">Cart Summary</h5>
+                      <h5 className="mb-3 text-start">Cart Summary</h5>
                       <div className="d-flex justify-content-between mb-3">
                         <span>Subtotal </span>
                         <span>${cartTotal.sub_total?.toFixed(2)}</span>
@@ -534,9 +541,9 @@ function Cart() {
                       {cart.length > 0 && (
                         <button
                           onClick={createCartOrder}
-                          className="btn btn-primary btn-rounded w-100"
+                          className="btn-main-pricing"
                         >
-                          Got to checkout
+                          Checkout
                         </button>
                       )}
                     </section>

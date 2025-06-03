@@ -197,11 +197,11 @@ function Search() {
                             className="text-reset"
                           >
                             <h5 className="card-title mb-3 ">
-                              {product.title.slice(0, 30)}...
+                              {product.title.slice(0, 30)}
                             </h5>
                           </Link>
                           <Link to="/" className="text-reset">
-                            <p>{product?.brand.title}</p>
+                            <p>{product?.brand?.title || "No Brand"}</p>
                           </Link>
                           <h6 className="mb-1">${product.price}</h6>
 
@@ -209,7 +209,7 @@ function Search() {
                           (product.size && product.size.length > 0) ? (
                             <div className="btn-group">
                               <button
-                                className="btn btn-primary dropdown-toggle"
+                                className="btn-main-pricing"
                                 type="button"
                                 id="dropdownMenuClickable"
                                 data-bs-toggle="dropdown"
@@ -382,9 +382,9 @@ function Search() {
                           <button
                             onClick={() => handleAddToWishlist(product.id)}
                             type="button"
-                            className="btn btn-danger px-3 ms-2 "
+                            className="btn"
                           >
-                            <i className="fas fa-heart" />
+                            <i className="fas fa-heart mb-2" />
                           </button>
                         </div>
                       </div>

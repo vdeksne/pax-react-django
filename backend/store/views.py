@@ -662,4 +662,13 @@ class SearchProductsAPIView(generics.ListAPIView):
 
         products = Product.objects.filter(status="published", title__icontains=query)
         return products
+
+class CategoryDetailView(generics.RetrieveAPIView):
+    serializer_class = CategorySerializer
+    permission_classes = (AllowAny,)
+
+    def get_object(self):
+        slug = self.kwargs.get('slug')
+        category = get_object_or_404(Category, slug=slug, active=True)
+        return category
        

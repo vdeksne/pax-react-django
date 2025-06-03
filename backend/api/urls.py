@@ -25,6 +25,7 @@ urlpatterns = [
 
     # Store API Endpoints
     path('category/', store_views.CategoryListView.as_view(), name='category'),
+    path('category/<slug:slug>/', store_views.CategoryDetailView.as_view(), name='category-detail'),
     path('brand/', store_views.BrandListView.as_view(), name='brand'),
     path('products/', store_views.ProductListView.as_view(), name='products'),
     path('featured-products/', store_views.FeaturedProductListView.as_view(), name='featured-products'),

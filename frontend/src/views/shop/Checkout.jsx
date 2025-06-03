@@ -5,8 +5,6 @@ import Swal from "sweetalert2";
 import { API_BASE_URL, PAYPAL_CLIENT_ID } from "../../utils/constants";
 
 import apiInstance from "../../utils/axios";
-import UserData from "../plugin/UserData";
-import CartID from "../plugin/cartID";
 
 function Checkout() {
   const [order, setOrder] = useState({
@@ -126,7 +124,7 @@ function Checkout() {
     <div>
       <main>
         <main className="mb-4 mt-4">
-          <div className="container">
+          <div className="container text-start">
             {/* Section: Checkout form */}
             <section className="">
               <div className="row gx-lg-5">
@@ -372,8 +370,7 @@ function Checkout() {
                         <button
                           onClick={payWithStripe}
                           type="submit"
-                          className="btn btn-primary btn-rounded w-100 mt-2"
-                          style={{ backgroundColor: "#635BFF" }}
+                          className="btn-main-pricing d w-100 mt-2"
                         >
                           Pay Now (Stripe)
                         </button>

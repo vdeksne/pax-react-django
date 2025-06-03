@@ -1599,6 +1599,11 @@ graphemer@^1.4.0:
   resolved "https://registry.npmjs.org/graphemer/-/graphemer-1.4.0.tgz"
   integrity sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==
 
+hamburger-react@^2.5.2:
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/hamburger-react/-/hamburger-react-2.5.2.tgz#6224277593a03904b315d32a18a5fba0c04d8dc1"
+  integrity sha512-xsv/I7wQX1RDaulDnvMVCXMMRXnkwnUnkE8seD5eNVZJ4nIrjtK5LLA20l5x/pJ+mPWOzlFxW32VJ86Gbo2Njw==
+
 has-bigints@^1.0.1, has-bigints@^1.0.2:
   version "1.0.2"
   resolved "https://registry.npmjs.org/has-bigints/-/has-bigints-1.0.2.tgz"
