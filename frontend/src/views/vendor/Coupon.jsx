@@ -133,9 +133,9 @@ function Coupon() {
             </div>
           </div>
           <hr />
-          <div className="row  container">
+          <div className="row  container overflow-scroll">
             <div className="col-lg-12">
-              <table className="table">
+              <table className="table overflow-scroll">
                 <thead className="table-dark">
                   <tr>
                     <th scope="col">Code</th>

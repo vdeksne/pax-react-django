@@ -269,17 +269,15 @@ function Products() {
                           Account
                         </Link>
                       ) : (
-                        <a
-                          href="/login"
-                          target="_blank"
+                        <Link
+                          to="/login"
                           className="btn-main"
                           data-ga-category="cta-join"
                           data-ga-c="Click"
                           data-ga-l="start-trial-hero"
-                          rel="noreferrer"
                         >
                           Login
-                        </a>
+                        </Link>
                       )}
                     </div>
                   </div>

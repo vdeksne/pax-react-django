@@ -138,8 +138,11 @@ function Products() {
               </Link>
             </div>
           </>
-          <div className="mb-3 mt-2">
-            <table className="table">
+          <div
+            className="mb-3 mt-2 overflow-scroll"
+            style={{ marginBottom: 300 }}
+          >
+            <table className="table text-start overflow-scroll">
               <thead className="table-dark">
                 <tr>
                   <th scope="col">#ID</th>

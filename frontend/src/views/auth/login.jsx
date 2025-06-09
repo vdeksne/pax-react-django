@@ -76,7 +76,7 @@ const Login = () => {
                 </div>
                 <button
                   type="submit"
-                  className="btn btn-primary w-100"
+                  className="w-100 btn-main-pricing"
                   disabled={isLoading}
                 >
                   {isLoading ? "Logging in..." : "Login"}

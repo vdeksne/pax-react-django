@@ -186,7 +186,7 @@ function Register() {
                 <div className="d-grid gap-2">
                   <button
                     type="submit"
-                    className="btn btn-primary"
+                    className="w-100 btn-main-pricing"
                     disabled={loading}
                   >
                     {loading ? (

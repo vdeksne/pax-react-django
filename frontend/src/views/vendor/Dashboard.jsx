@@ -164,7 +164,7 @@ function Dashboard() {
             </div>
           </div>
           <div className="row">
-            <div className="col d-flex justify-content-center">
+            <div className="col d-flex justify-content-center settings-buttons-container align-items-center">
               <Link className="btn-main-pricing me-2">Daily Report</Link>
               <Link className="btn-main-pricing me-2">Monthly Report</Link>
               <Link className="btn-main-pricing me-2">Yearly Report</Link>
@@ -187,7 +187,10 @@ function Dashboard() {
             </div>
           </div>
           <a id="layouts" />
-          <div className="mb-3 mt-5" style={{ marginBottom: 300 }}>
+          <div
+            className="mb-3 mt-5 overflow-scroll"
+            style={{ marginBottom: 300 }}
+          >
             <nav className="mb-5">
               <div className="nav nav-tabs" id="nav-tab" role="tablist">
                 <button
@@ -226,7 +229,7 @@ function Dashboard() {
                 aria-labelledby="nav-home-tab"
               >
                 <h4>Products</h4>
-                <table className="table">
+                <table className="table overflow-scroll">
                   <thead className="table-dark">
                     <tr>
                       <th scope="col">#ID</th>

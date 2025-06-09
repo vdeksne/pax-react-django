@@ -456,7 +456,7 @@ function Cart() {
                           </div>
                           <div className="col-md-2 mb-4 mb-md-0 text-start">
                             <div className="d-flex justify-content-center align-items-center">
-                              <div className="form-outline">
+                              <div className="form-outline cart-input">
                                 <input
                                   type="number"
                                   id={`qtyInput-${c.product.id}`}
@@ -482,7 +482,7 @@ function Cart() {
                                     c.size
                                   )
                                 }
-                                className="ms-2 btn btn-primary"
+                                className="ms-2 btn-main-pricing"
                               >
                                 <i className="fas fa-rotate-right"></i>
                               </button>
@@ -527,12 +527,17 @@ function Cart() {
                               type="text"
                               id=""
                               name="fullName"
-                              className="form-control input text-dark"
+                              className="form-control input text-dark w-100 cart-input"
                               onChange={handleChange}
                               value={fullName}
                               style={{
                                 color: "black",
                                 backgroundColor: "white",
+                                width: "100%",
+                                padding: "8px 12px",
+                                fontSize: "16px",
+                                height: "45px",
+                                minWidth: "50px",
                               }}
                             />
                           </div>
@@ -696,7 +701,7 @@ function Cart() {
                           </button>
                           <button
                             onClick={handleClearCart}
-                            className="btn btn-danger w-100"
+                            className="btn-main-pricing w-100"
                           >
                             <i className="fas fa-trash me-2"></i>
                             Clear Cart

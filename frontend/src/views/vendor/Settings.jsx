@@ -327,9 +327,9 @@ function Settings() {
                                   />
                                 </div>
                               </div>
-                              <div className="col-lg-12 mt-4 mb-3 d-flex">
+                              <div className="col-lg-12 mt-4 mb-3 d-flex flex-column flex-md-row">
                                 <button
-                                  className="btn-main-pricing"
+                                  className="btn-main-pricing mb-2 mb-md-0"
                                   type="submit"
                                 >
                                   Update Shop{" "}
@@ -337,7 +337,7 @@ function Settings() {
                                 </button>
                                 <Link
                                   to={`/vendor/${vendorData.slug}/`}
-                                  className="btn-main-pricing ms-2"
+                                  className="btn-main-pricing ms-md-2"
                                   type="submit"
                                 >
                                   View Shop <i className="fas fa-shop" />{" "}

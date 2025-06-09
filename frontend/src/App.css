@@ -747,3 +747,18 @@ button:focus {
   display: block;
   unicode-bidi: isolate;
 }
+
+.cart-input {
+  min-width: 4rem !important;
+}
+.settings-buttons-container-main {
+  display: flex;
+  flex-direction: row !important;
+  gap: 0.5rem;
+}
+
+/* @media (max-width: 600px) {
+  .settings-buttons-container-main {
+    flex-direction: column !important;
+  }
+} */

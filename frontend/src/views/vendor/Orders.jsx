@@ -35,13 +35,16 @@ function Orders() {
       <div className="row row-offcanvas row-offcanvas-left h-100">
         <Sidebar />
         <div className="col-md-9 col-lg-10 main">
-          <div className="mb-3 mt-3" style={{ marginBottom: 300 }}>
+          <div
+            className="mb-3 mt-3 overflow-scroll"
+            style={{ marginBottom: 300 }}
+          >
             <div>
               <h4>
                 <i className="bi bi-cart-check-fill"></i> All Orders{" "}
               </h4>
 
-              <table className="table">
+              <table className="table overflow-scroll">
                 <thead className="table-dark">
                   <tr>
                     <th scope="col">#ID</th>

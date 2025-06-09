@@ -134,7 +134,7 @@ function Notifications() {
             </div>
             <hr />
             <div className="row container">
-              <div className="col-lg-12">
+              <div className="col-lg-12 overflow-scroll">
                 <table className="table">
                   <thead className="table-dark">
                     <tr>

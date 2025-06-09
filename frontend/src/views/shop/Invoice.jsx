@@ -24,17 +24,17 @@ function Invoice() {
   return (
     <div>
       <>
-        <div className="row d-flex justify-content-center p-2">
+        <div className="row d-flex justify-content-center p-2 text-start">
           <div className="receipt-main col-xs-10 col-sm-10 col-md-6 col-xs-offset-1 col-sm-offset-1 col-md-offset-3">
             <div className="d-flex justify-content-between">
               <div className="row">
-                <div className="receipt-header">
+                <div className="receipt-header text-start">
                   <div className="col-xs-6 col-sm-6 col-md-6">
                     <div className="receipt-left">
                       <img
-                        className="img-responsive"
+                        className="img-responsive mb-4 "
                         alt="iamgurdeeposahan"
-                        src="https://img.freepik.com/free-vector/bird-colorful-logo-gradient-vector_343694-1365.jpg"
+                        src="../../assets/logo.png"
                         style={{ width: 71, borderRadius: 43 }}
                       />
                     </div>
@@ -45,13 +45,14 @@ function Invoice() {
                         Pax<span className="text-warning">.</span>
                       </h5>
                       <p>
-                        <i className="fa fa-phone" /> +1 3649-6589
+                        <i className="fa fa-phone" /> +371 27266132
                       </p>
                       <p>
-                        <i className="fa fa-envelope" /> company@gmail.com
+                        <i className="fa fa-envelope" />{" "}
+                        viktorijadeksne@gmail.com
                       </p>
                       <p>
-                        <i className="fa fa-location-arrow" /> 123 Main Street
+                        <i className="fa fa-location-arrow" /> Riga, Latvia
                       </p>
                     </div>
                   </div>
