@@ -762,3 +762,27 @@ button:focus {
     flex-direction: column !important;
   }
 } */
+
+.margin-zero-important {
+  margin-bottom: 0 !important;
+  display: flex;
+  width: 11rem;
+  height: 3rem;
+  padding: 0.875rem 2.05rem 0.875rem 2.0625rem;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 120rem;
+  border: var(--letter-spacing-1, 1px) solid var(--color-black-solid, #000000);
+  background: var(--color-white-20, rgba(255, 255, 255, 0.2));
+  backdrop-filter: blur(7.5px);
+  color: #000000 !important;
+  text-align: center;
+  font-family: "Gotham-Medium", sans-serif;
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: var(--line-height-20, 1.25rem);
+  letter-spacing: var(--letter-spacing-0_4, 0.025rem);
+  transition: all 0.3s ease;
+}

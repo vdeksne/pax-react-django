@@ -95,84 +95,170 @@ class CartApiView(generics.ListCreateAPIView):
     permission_classes = (AllowAny,)
 
     def create(self, request, *args, **kwargs):
-        payload = request.data
-        
-        product_id = payload['product']
-        user_id = payload['user']
-        qty = payload['qty']
-        price = payload['price']
-        shipping_amount = payload['shipping_amount']
-        country = payload['country']
-        size = payload['size']
-        color = payload['color']
-        cart_id = payload['cart_id']
-        
-        product = Product.objects.filter(status="published", id=product_id).first()
-        if user_id != "undefined":
-            user = User.objects.filter(id=user_id).first()
-        else:
-            user = None
-        
-        tax = Tax.objects.filter(country=country).first()
-        if tax:
-            tax_rate = tax.rate / 100
+        try:
+            # Log the incoming request data
+            print("Request data:", request.data)
+            print("Content type:", request.content_type)
+
+            # Handle both FormData and JSON data
+            if request.content_type == 'multipart/form-data':
+                payload = request.data
+            else:
+                payload = request.data
+
+            # Log the payload after processing
+            print("Processed payload:", payload)
+
+            # Validate required fields
+            required_fields = ['product', 'qty', 'price', 'shipping_amount', 'country', 'size', 'color', 'cart_id']
+            for field in required_fields:
+                if field not in payload:
+                    print(f"Missing required field: {field}")
+                    return Response({"error": f"Missing required field: {field}"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Convert string values to appropriate types with validation
+            try:
+                product_id = int(payload['product'])
+                qty = int(payload['qty'])
+                price = Decimal(str(payload['price']))
+                shipping_amount = Decimal(str(payload['shipping_amount']))
+                print(f"Converted values - product_id: {product_id}, qty: {qty}, price: {price}, shipping_amount: {shipping_amount}")
+            except (ValueError, TypeError) as e:
+                print(f"Error converting values: {str(e)}")
+                return Response({"error": f"Invalid numeric value: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get string values with defaults
+            user_id = payload.get('user', '')
+            country = payload.get('country', '')
+            size = payload.get('size', 'No Size')
+            color = payload.get('color', 'No Color')
+            cart_id = payload.get('cart_id', '')
             
-        else:
-            tax_rate = 0
+            print(f"String values - user_id: {user_id}, country: {country}, size: {size}, color: {color}, cart_id: {cart_id}")
+            
+            # Validate product exists and is published
+            try:
+                product = Product.objects.get(status="published", id=product_id)
+                print(f"Product found - id: {product_id}")
+            except Product.DoesNotExist:
+                print(f"Product not found - id: {product_id}")
+                return Response({"error": "Product not found or not available"}, status=status.HTTP_404_NOT_FOUND)
 
-        cart = Cart.objects.filter(cart_id=cart_id, product=product).first()
+            # Handle user
+            user = None
+            if user_id and user_id != "":
+                try:
+                    user = User.objects.get(id=user_id)
+                    print(f"User found - id: {user_id}")
+                except User.DoesNotExist:
+                    print(f"User not found - id: {user_id}")
+                    return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Get tax rate
+            tax_rate = Decimal('0.00')
+            try:
+                tax = Tax.objects.filter(country=country).first()
+                if tax:
+                    tax_rate = Decimal(str(tax.rate)) / Decimal('100')
+                    print(f"Tax found - rate: {tax_rate}")
+                else:
+                    print(f"No tax found for country: {country}")
+            except Exception as e:
+                print(f"Error getting tax rate: {str(e)}")
 
-        if cart:
-            cart.product = product
-            cart.user = user
-            cart.qty = qty
-            cart.price = price
-            cart.sub_total = Decimal(price) * int(qty)
-            cart.shipping_amount = Decimal(shipping_amount) * int(qty)
-            cart.size = size
-            cart.tax_fee = int(qty) * Decimal(tax_rate)
-            cart.color = color
-            cart.country = country
-            cart.cart_id = cart_id
-
-            config_settings = ConfigSettings.objects.first()
-
-            if config_settings.service_fee_charge_type == "percentage":
-                service_fee_percentage = config_settings.service_fee_percentage / 100 
-                cart.service_fee = Decimal(service_fee_percentage) * cart.sub_total
+            # Check for existing cart item
+            cart = Cart.objects.filter(cart_id=cart_id, product=product).first()
+            if cart:
+                print(f"Existing cart found - id: {cart.id}")
             else:
-                cart.service_fee = config_settings.service_fee_flat_rate
+                print("No existing cart found")
 
-            cart.total = cart.sub_total + cart.shipping_amount + cart.service_fee + cart.tax_fee
-            cart.save()
+            # Calculate service fee with safe defaults
+            service_fee = Decimal('0.00')
+            try:
+                config_settings = ConfigSettings.objects.first()
+                print(f"Config settings found: {bool(config_settings)}")
+                
+                if config_settings and hasattr(config_settings, 'service_fee_charge_type'):
+                    service_fee_type = config_settings.service_fee_charge_type
+                    print(f"Service fee type: {service_fee_type}")
+                    
+                    if service_fee_type == "percentage":
+                        service_fee_percentage = getattr(config_settings, 'service_fee_percentage', 0)
+                        service_fee = (Decimal(str(service_fee_percentage)) / Decimal('100')) * (price * qty)
+                        print(f"Percentage service fee calculated: {service_fee}")
+                    else:
+                        service_fee = getattr(config_settings, 'service_fee_flat_rate', Decimal('0.00'))
+                        print(f"Flat rate service fee: {service_fee}")
+                else:
+                    print("No config settings found or missing service_fee_charge_type, using default service fee of 0")
+            except Exception as e:
+                print(f"Error calculating service fee: {str(e)}")
+                # Continue with default service fee of 0
 
-            return Response({"message": "Cart updated successfully"}, status=status.HTTP_200_OK)
-        else:
-            cart = Cart()
-            cart.product = product
-            cart.user = user
-            cart.qty = qty
-            cart.price = price
-            cart.sub_total = Decimal(price) * int(qty)
-            cart.shipping_amount = Decimal(shipping_amount) * int(qty)
-            cart.size = size
-            cart.tax_fee = int(qty) * Decimal(tax_rate)
-            cart.color = color
-            cart.country = country
-            cart.cart_id = cart_id
+            # Calculate totals
+            sub_total = price * qty
+            shipping_total = shipping_amount * qty
+            tax_fee = qty * tax_rate
+            total = sub_total + shipping_total + service_fee + tax_fee
 
-            config_settings = ConfigSettings.objects.first()
+            print("Final calculations:", {
+                "sub_total": sub_total,
+                "shipping_total": shipping_total,
+                "tax_fee": tax_fee,
+                "service_fee": service_fee,
+                "total": total
+            })
 
-            if config_settings.service_fee_charge_type == "percentage":
-                service_fee_percentage = config_settings.service_fee_percentage / 100 
-                cart.service_fee = Decimal(service_fee_percentage) * cart.sub_total
+            # Update or create cart item
+            if cart:
+                cart.product = product
+                cart.user = user
+                cart.qty = qty
+                cart.price = price
+                cart.sub_total = sub_total
+                cart.shipping_amount = shipping_total
+                cart.size = size
+                cart.tax_fee = tax_fee
+                cart.color = color
+                cart.country = country
+                cart.cart_id = cart_id
+                cart.service_fee = service_fee
+                cart.total = total
+                cart.save()
+                print("Cart updated successfully")
+
+                return Response({"message": "Cart updated successfully"}, status=status.HTTP_200_OK)
             else:
-                cart.service_fee = config_settings.service_fee_flat_rate
+                cart = Cart()
+                cart.product = product
+                cart.user = user
+                cart.qty = qty
+                cart.price = price
+                cart.sub_total = sub_total
+                cart.shipping_amount = shipping_total
+                cart.size = size
+                cart.tax_fee = tax_fee
+                cart.color = color
+                cart.country = country
+                cart.cart_id = cart_id
+                cart.service_fee = service_fee
+                cart.total = total
+                cart.save()
+                print("New cart created successfully")
 
-            cart.total = cart.sub_total + cart.shipping_amount + cart.service_fee + cart.tax_fee
-            cart.save()
-
-            return Response( {"message": "Cart Created Successfully"}, status=status.HTTP_201_CREATED)
+                return Response({"message": "Cart Created Successfully"}, status=status.HTTP_201_CREATED)
+        except KeyError as e:
+            print(f"KeyError: {str(e)}")
+            return Response({"error": f"Missing required field: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as e:
+            print(f"ValueError: {str(e)}")
+            return Response({"error": f"Invalid value: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+            import traceback
+            print("Traceback:", traceback.format_exc())
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CartListView(generics.ListAPIView):

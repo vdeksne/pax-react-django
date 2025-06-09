@@ -85,7 +85,7 @@ function StoreFooter() {
               placeholder="Enter your email"
               required
             />
-            <button type="submit" className="newsletter-button">
+            <button type="submit" className=" margin-zero-important">
               Subscribe
             </button>
           </form>

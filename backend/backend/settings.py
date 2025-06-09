@@ -34,17 +34,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "desirable-communication-production.up.railway.app",
-           "localhost",
     "127.0.0.1",
-    "192.168.1.120",
-    "0.0.0.0",
+    "localhost",
 ]
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
+
     'https://desirable-communication-production.up.railway.app',
-    'http://192.168.1.120:8000',
-    'http://192.168.1.120:5173',
+    'http://127.0.0.1',
+    'http://127.0.0.1:8000',
 ]
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 

@@ -20,14 +20,13 @@ function Products() {
   // eslint-disable-next-line no-unused-vars
   const [brand, setBrand] = useState([]);
 
-  let [setIsAddingToCart] = useState("Add To Cart");
   const [loadingStates, setLoadingStates] = useState({});
-  let [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const axios = apiInstance;
   const currentAddress = GetCurrentAddress();
   const userData = UserData();
-  let cart_id = CartID();
+  const cart_id = CartID();
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedColors, setSelectedColors] = useState({});
@@ -36,84 +35,54 @@ function Products() {
   const [colorValue, setColorValue] = useState("No Color");
   const [sizeValue, setSizeValue] = useState("No Size");
   const [qtyValue, setQtyValue] = useState(1);
-  const { cartCount, updateCartCount } = useContext(CartContext);
+  const { updateCartCount } = useContext(CartContext);
 
-  // Pagination
-  // Define the number of items to be displayed per page
-  const itemsPerPage = 6;
+  // Responsive pagination
+  const [itemsPerPage, setItemsPerPage] = useState(6);
 
-  // State hook to manage the current page being displayed
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setItemsPerPage(3);
+      } else if (window.innerWidth < 1024) {
+        setItemsPerPage(4);
+      } else {
+        setItemsPerPage(6);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Calculate the index of the last item on the current page
   const indexOfLastItem = currentPage * itemsPerPage;
-
-  // Calculate the index of the first item on the current page
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-
-  // Extract a subset of items (current page) from the products array
   const currentItems = products.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Calculate the total number of pages needed based on the total number of items
   const totalPages = Math.ceil(products.length / itemsPerPage);
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
-  // Generate an array of page numbers for pagination control
-  const pageNumbers = Array.from(
-    { length: totalPages },
-    (_, index) => index + 1
-  );
-
-  // Explanation:
-  // - `indexOfLastItem` and `indexOfFirstItem` are used to determine the range of items
-  //   to be displayed on the current page.
-  // - `currentItems` holds the subset of products to be displayed on the current page.
-  // - `totalPages` calculates the total number of pages required based on the total number
-  //   of items and the specified items per page.
-  // - `pageNumbers` is an array containing the page numbers from 1 to the total number of pages.
-  //   It's often used for generating pagination controls or navigation.
-
-  // Define an async function for fetching data from an API endpoint and updating the state.
-  // This function takes two parameters:
-  // - endpoint: The API endpoint to fetch data from.
-  // - setDataFunction: The state update function to set the retrieved data.
-  async function fetchData(endpoint, setDataFunction) {
+  const fetchData = async (endpoint, setDataFunction) => {
     try {
-      // Send an HTTP GET request to the provided endpoint using Axios.
       const response = await axios.get(endpoint);
-
-      // If the request is successful, update the state with the retrieved data.
       setDataFunction(response.data);
-      if (products) {
+      if (endpoint === "products/") {
         setLoading(false);
       }
     } catch (error) {
-      // If an error occurs during the request, log the error to the console.
-      console.log(error);
+      console.error(`Error fetching ${endpoint}:`, error);
+      if (endpoint === "products/") {
+        setLoading(false);
+      }
     }
-  }
+  };
 
-  // Use the useEffect hook to execute code when the component mounts (empty dependency array).
   useEffect(() => {
-    // Fetch and set the 'products' data by calling fetchData with the 'products/' endpoint.
     fetchData("products/", setProducts);
-  }, []);
-
-  // Use the useEffect hook to execute code when the component mounts (empty dependency array).
-  useEffect(() => {
-    // Fetch and set the 'products' data by calling fetchData with the 'products/' endpoint.
     fetchData("featured-products/", setFeaturedProducts);
-  }, []);
-
-  // Use another useEffect hook to execute code when the component mounts (empty dependency array).
-  useEffect(() => {
-    // Fetch and set the 'category' data by calling fetchData with the 'category/' endpoint.
     fetchData("category/", setCategory);
-  }, []);
-
-  // Fetch and set the 'brand' data by calling fetchData with the 'brand/' endpoint.
-
-  useEffect(() => {
-    // Fetch and set the 'category' data by calling fetchData with the 'category/' endpoint.
     fetchData("brand/", setBrand);
   }, []);
 
@@ -121,73 +90,70 @@ function Products() {
     setColorValue(colorName);
     setColorImage(colorImage);
     setSelectedProduct(product_id);
-
-    setSelectedColors((prevSelectedColors) => ({
-      ...prevSelectedColors,
-      [product_id]: colorName,
-    }));
+    setSelectedColors((prev) => ({ ...prev, [product_id]: colorName }));
   };
 
   const handleSizeButtonClick = (event, product_id, sizeName) => {
     setSizeValue(sizeName);
     setSelectedProduct(product_id);
-
-    setSelectedSize((prevSelectedSize) => ({
-      ...prevSelectedSize,
-      [product_id]: sizeName,
-    }));
+    setSelectedSize((prev) => ({ ...prev, [product_id]: sizeName }));
   };
 
   const handleQtyChange = (event, product_id) => {
-    setQtyValue(event.target.value);
+    const value = Math.max(1, parseInt(event.target.value) || 1);
+    setQtyValue(value);
     setSelectedProduct(product_id);
   };
 
   const handleAddToCart = async (product_id, price, shipping_amount) => {
-    setLoadingStates((prevStates) => ({
-      ...prevStates,
-      [product_id]: "Adding...",
-    }));
+    if (
+      !product_id ||
+      !price ||
+      price <= 0 ||
+      shipping_amount < 0 ||
+      !qtyValue ||
+      qtyValue <= 0
+    ) {
+      console.error("Invalid input parameters");
+      return;
+    }
+
+    setLoadingStates((prev) => ({ ...prev, [product_id]: "Adding..." }));
 
     try {
-      await addToCart(
+      const success = await addToCart(
         product_id,
         userData?.user_id,
         qtyValue,
         price,
         shipping_amount,
-        currentAddress.country,
+        currentAddress?.country,
         colorValue,
         sizeValue,
-        cart_id,
-        setIsAddingToCart
+        cart_id
       );
 
-      // After a successful operation, set the loading state to false
-      setLoadingStates((prevStates) => ({
-        ...prevStates,
-        [product_id]: "Added to Cart",
-      }));
+      if (success) {
+        setLoadingStates((prev) => ({
+          ...prev,
+          [product_id]: "Added to Cart",
+        }));
+        setColorValue("No Color");
+        setSizeValue("No Size");
+        setQtyValue(1);
 
-      setColorValue("No Color");
-      setSizeValue("No Size");
-      setQtyValue(0);
+        const url = userData?.user_id
+          ? `cart-list/${cart_id}/${userData.user_id}/`
+          : `cart-list/${cart_id}/`;
 
-      const url = userData?.user_id
-        ? `cart-list/${cart_id}/${userData?.user_id}/`
-        : `cart-list/${cart_id}/`;
-      const response = await axios.get(url);
-
-      updateCartCount(response.data.length);
-      console.log(response.data.length);
+        const response = await axios.get(url);
+        updateCartCount(response.data.length);
+      } else {
+        throw new Error("Failed to add to cart");
+      }
     } catch (error) {
-      console.log(error);
-
-      // In case of an error, set the loading state for the specific product back to "Add to Cart"
-      setLoadingStates((prevStates) => ({
-        ...prevStates,
-        [product_id]: "Add to Cart",
-      }));
+      console.error("Error adding to cart:", error);
+      setLoadingStates((prev) => ({ ...prev, [product_id]: "Add to Cart" }));
     }
   };
 
@@ -195,27 +161,31 @@ function Products() {
     try {
       await addToWishlist(product_id, userData?.user_id);
     } catch (error) {
-      console.log(error);
+      console.error("Error adding to wishlist:", error);
     }
   };
 
   return (
     <>
-      {loading === false && (
-        <div>
-          <main className="mt-1">
+      {!loading ? (
+        <div className="min-h-screen">
+          <main className="mt-1 d-flex flex-column justify-content-center align-items-center">
             <div className="container-products">
               <section className="text-center container">
                 <div className="position-relative">
                   <video
-                    src="/assets/video/desktop.mp4"
+                    src={
+                      window.innerWidth <= 768
+                        ? "/assets/video/video.mp4"
+                        : "/assets/video/desktop.mp4"
+                    }
                     style={{
                       width: "100%",
                       objectFit: "cover",
                       objectPosition: "center",
                       maxWidth: "100vw",
                       borderRadius: "clamp(1rem, 1rem, 1rem)",
-                      aspectRatio: "16/9",
+                      aspectRatio: window.innerWidth <= 768 ? "9/16" : "16/9",
                       background: "rgba(0,0,0,0.5)",
                     }}
                     className="img-products-hero"
@@ -226,7 +196,7 @@ function Products() {
                     loop
                     muted
                     playsInline
-                  ></video>
+                  />
 
                   <div
                     className="position-absolute top-0 start-0 w-100 d-flex align-items-center justify-content-center"
@@ -237,21 +207,28 @@ function Products() {
                       objectPosition: "center",
                       maxWidth: "100vw",
                       borderRadius: "clamp(1rem, 1rem, 1rem)",
-                      aspectRatio: "16/8.5", // Slightly taller aspect ratio
-                      height: "calc(100% - 8px)", // Add 10px to height
+                      aspectRatio: window.innerWidth <= 768 ? "9/16" : "16/8.5",
+                      height: "calc(100% - 8px)",
                     }}
                   >
-                    <div className="container text-white text-center m-4">
+                    <div
+                      className="container text-white text-center m-4"
+                      style={{ fontSize: "clamp(1rem, 4vw, 1.5rem)" }}
+                    >
                       <h1 className="display-4">
                         <p className="mb-2">
-                          <span>Fuel Creativity. Power Independence.</span>
+                          <span className="responsive-text">
+                            Fuel Creativity. Power Independence.
+                          </span>
                         </p>
                         <p className="mb-4">
-                          <span>Connect. Collaborate. Create.</span>
+                          <span className="responsive-text">
+                            Connect. Collaborate. Create.
+                          </span>
                         </p>
                       </h1>
 
-                      <p className="lead mb-5 display-5">
+                      <p className="lead mb-5 display-5 responsive-text">
                         <span>
                           Empowering artists and designers to share their work,
                           build their brand, and shape their future.
@@ -261,7 +238,7 @@ function Products() {
                       {userData ? (
                         <Link
                           to="/customer/account"
-                          className="btn-main"
+                          className="btn-main responsive-button"
                           data-ga-category="cta-join"
                           data-ga-c="Click"
                           data-ga-l="start-trial-hero"
@@ -271,7 +248,7 @@ function Products() {
                       ) : (
                         <Link
                           to="/login"
-                          className="btn-main"
+                          className="btn-main responsive-button"
                           data-ga-category="cta-join"
                           data-ga-c="Click"
                           data-ga-l="start-trial-hero"
@@ -291,11 +268,11 @@ function Products() {
                   </div>
                 </div>
               </section>
-              <div className="d-flex justify-content-center flex-wrap">
+              <div className="d-flex justify-content-center flex-wrap gap-3">
                 {category.map((c) => (
                   <div
                     key={c.id}
-                    className="align-items-center d-flex flex-column"
+                    className="category-card"
                     style={{
                       margin: "10px",
                       borderRadius: "10px",
@@ -303,7 +280,7 @@ function Products() {
                       background: "#fff",
                       transition: "all 0.3s ease",
                       cursor: "pointer",
-                      width: "200px",
+                      width: "clamp(150px, 20vw, 200px)",
                     }}
                     onMouseOver={(e) => {
                       e.currentTarget.style.transform = "translateY(-5px)";
@@ -315,19 +292,18 @@ function Products() {
                     <img
                       src={c.image}
                       alt={c.title}
+                      className="img-fluid rounded-circle mb-3"
                       style={{
-                        width: "100px",
-                        height: "100px",
+                        width: "clamp(60px, 10vw, 100px)",
+                        height: "clamp(60px, 10vw, 100px)",
                         objectFit: "cover",
-                        borderRadius: "50%",
-                        marginBottom: "15px",
                       }}
                     />
                     <Link
                       to={`/category/${c.slug}`}
                       className="text-dark text-decoration-none fw-bold"
                       style={{
-                        fontSize: "1.1rem",
+                        fontSize: "clamp(0.9rem, 1.5vw, 1.1rem)",
                         textAlign: "center",
                       }}
                     >
@@ -346,10 +322,10 @@ function Products() {
                 </div>
               </section>
               <section className="text-center m-5">
-                <div className="row">
+                <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
                   {currentItems.map((product) => (
-                    <div className="col-lg-4 col-md-12 mb-4" key={product.id}>
-                      <div className="card">
+                    <div className="col" key={product.id}>
+                      <div className="card h-100">
                         <div
                           className="bg-image hover-zoom ripple"
                           data-mdb-ripple-color="light"
@@ -363,10 +339,10 @@ function Products() {
                               }
                               className="w-100"
                               style={{
-                                width: "100px",
-                                height: "300px",
+                                height: "clamp(200px, 30vw, 300px)",
                                 objectFit: "cover",
                               }}
+                              alt={product.title}
                             />
                           </Link>
                         </div>
@@ -387,11 +363,10 @@ function Products() {
                           </Link>
                           <h6 className="mb-3">${product.price}</h6>
 
-                          {/* Wishlist Button */}
-
+                          {/* Product Actions */}
                           <div className="heart-container">
-                            {(product.color && product.color.length > 0) ||
-                            (product.size && product.size.length > 0) ? (
+                            {product.color?.length > 0 ||
+                            product.size?.length > 0 ? (
                               <div className="btn-group">
                                 <button
                                   className="dropdown-toggle btn-main-pricing"
@@ -420,80 +395,81 @@ function Products() {
                                             handleQtyChange(e, product.id)
                                           }
                                           min={1}
-                                          defaultValue={1}
+                                          value={qtyValue}
                                         />
                                       </li>
                                     </div>
                                   </div>
 
                                   {/* Size */}
-                                  {product?.size &&
-                                    product?.size.length > 0 && (
-                                      <div className="d-flex flex-column">
-                                        <li className="p-1">
-                                          <b>Size</b>:{" "}
-                                          {selectedSize[product.id] ||
-                                            "Select a size"}
-                                        </li>
-                                        <div className="p-1 mt-0 pt-0 d-flex flex-wrap">
-                                          {product?.size?.map((size) => (
-                                            <li key={size.id}>
-                                              <button
-                                                className="btn-secondary btn-sm me-2 mb-1"
-                                                onClick={(e) =>
-                                                  handleSizeButtonClick(
-                                                    e,
-                                                    product.id,
-                                                    size.name
-                                                  )
-                                                }
-                                              >
-                                                {size.name}
-                                              </button>
-                                            </li>
-                                          ))}
-                                        </div>
+                                  {product?.size?.length > 0 && (
+                                    <div className="d-flex flex-column">
+                                      <li className="p-1">
+                                        <b>Size</b>:{" "}
+                                        {selectedSize[product.id] ||
+                                          "Select a size"}
+                                      </li>
+                                      <div className="p-1 mt-0 pt-0 d-flex flex-wrap gap-2">
+                                        {product.size.map((size) => (
+                                          <li key={size.id}>
+                                            <button
+                                              className="btn-secondary btn-sm"
+                                              onClick={(e) =>
+                                                handleSizeButtonClick(
+                                                  e,
+                                                  product.id,
+                                                  size.name
+                                                )
+                                              }
+                                            >
+                                              {size.name}
+                                            </button>
+                                          </li>
+                                        ))}
                                       </div>
-                                    )}
+                                    </div>
+                                  )}
 
                                   {/* Color */}
-                                  {product.color &&
-                                    product.color.length > 0 && (
-                                      <div className="d-flex flex-column mt-3">
-                                        <li className="p-1 color_name_div">
-                                          <b>Color</b>:{" "}
-                                          {selectedColors[product.id] ||
-                                            "Select a color"}
-                                        </li>
-                                        <div className="p-1 mt-0 pt-0 d-flex flex-wrap">
-                                          {product?.color?.map((color) => (
-                                            <li key={color.id}>
-                                              <input
-                                                type="hidden"
-                                                className={`color_name${color.id}`}
-                                                name=""
-                                                id=""
-                                              />
-                                              <button
-                                                className="color-button p-3 me-2"
-                                                style={{
-                                                  backgroundColor:
-                                                    color.color_code,
-                                                }}
-                                                onClick={(e) =>
-                                                  handleColorButtonClick(
-                                                    e,
-                                                    product.id,
-                                                    color.name,
-                                                    color.image
-                                                  )
-                                                }
-                                              ></button>
-                                            </li>
-                                          ))}
-                                        </div>
+                                  {product.color?.length > 0 && (
+                                    <div className="d-flex flex-column mt-3">
+                                      <li className="p-1 color_name_div">
+                                        <b>Color</b>:{" "}
+                                        {selectedColors[product.id] ||
+                                          "Select a color"}
+                                      </li>
+                                      <div className="p-1 mt-0 pt-0 d-flex flex-wrap gap-2">
+                                        {product.color.map((color) => (
+                                          <li key={color.id}>
+                                            <button
+                                              className="color-button"
+                                              style={{
+                                                backgroundColor:
+                                                  color.color_code,
+                                                width: "2rem",
+                                                height: "2rem",
+                                                borderRadius: "50%",
+                                                border:
+                                                  selectedColors[product.id] ===
+                                                  color.name
+                                                    ? "2px solid #000"
+                                                    : "none",
+                                              }}
+                                              onClick={(e) =>
+                                                handleColorButtonClick(
+                                                  e,
+                                                  product.id,
+                                                  color.name,
+                                                  color.image
+                                                )
+                                              }
+                                              aria-label={`Select ${color.name} color`}
+                                            />
+                                          </li>
+                                        ))}
                                       </div>
-                                    )}
+                                    </div>
+                                  )}
 
                                   {/* Add To Cart */}
                                   <div className="d-flex mt-3 p-1 w-100">
@@ -509,8 +485,7 @@ function Products() {
                                         loadingStates[product.id] ===
                                         "Adding..."
                                       }
-                                      type="button"
-                                      className=" btn-primary me-1 mb-1 btn-main-pricing"
+                                      className="btn-primary w-100 btn-main-pricing"
                                     >
                                       {loadingStates[product.id] ===
                                       "Added to Cart" ? (
@@ -546,8 +521,7 @@ function Products() {
                                 disabled={
                                   loadingStates[product.id] === "Adding..."
                                 }
-                                type="button"
-                                className=" btn-primary me-1 mb-1 btn-main-pricing"
+                                className="btn-primary me-1 mb-1 btn-main-pricing"
                               >
                                 {loadingStates[product.id] ===
                                 "Added to Cart" ? (
@@ -571,8 +545,8 @@ function Products() {
 
                             <button
                               onClick={() => handleAddToWishlist(product.id)}
-                              type="button"
                               className="btn"
+                              aria-label="Add to wishlist"
                             >
                               <svg
                                 width="18"
@@ -594,78 +568,53 @@ function Products() {
                   ))}
                 </div>
               </section>
-              <nav className="d-flex  gap-1 pt-2">
-                <ul className="pagination">
-                  <li
-                    className={`page-item ${
-                      currentPage === 1 ? "disabled" : ""
-                    }`}
-                  >
-                    <button
-                      className="page-link"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                    >
-                      <i className="ci-arrow-left me-2" />
-                      Previous
-                    </button>
-                  </li>
-                </ul>
-                <ul className="pagination">
-                  {pageNumbers.map((number) => (
-                    <li
-                      key={number}
-                      className={`page-item ${
-                        currentPage === number ? "active" : ""
-                      }`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() => setCurrentPage(number)}
-                      >
-                        {number}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
 
-                <ul className="pagination">
-                  <li
-                    className={`page-item ${
-                      currentPage === totalPages ? "disabled" : ""
-                    }`}
-                  >
-                    <button
-                      className="page-link"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                    >
-                      Next
-                      <i className="ci-arrow-right ms-3" />
-                    </button>
-                  </li>
-                </ul>
-              </nav>
-              <div>
-                <div
-                  className="d-blfock mt-5 page-navigation"
-                  aria-label="Page navigation"
+              {/* Pagination */}
+              <nav className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
                 >
-                  <span className="fs-sm text-muted me-md-3">
-                    Page <b>{currentPage} </b> of <b>{totalPages}</b>
-                  </span>
+                  Previous
+                </button>
+
+                <div className="d-flex gap-1 flex-wrap justify-content-center">
+                  {pageNumbers.map((number) => (
+                    <button
+                      key={number}
+                      className={`btn ${
+                        currentPage === number
+                          ? "btn-primary"
+                          : "btn-outline-primary"
+                      }`}
+                      onClick={() => setCurrentPage(number)}
+                    >
+                      {number}
+                    </button>
+                  ))}
                 </div>
-                {totalPages !== 1 && (
-                  <div
-                    className="d-block mt-2 page-navigation"
-                    aria-label="Page navigation"
-                  >
-                    <span className="fs-sm text-muted me-md-3">
-                      Showing <b>{itemsPerPage}</b> of <b>{products?.length}</b>{" "}
-                      records
-                    </span>
-                  </div>
+
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </nav>
+
+              <div className="text-center mt-4">
+                <p className="text-muted">
+                  Page <b>{currentPage}</b> of <b>{totalPages}</b>
+                </p>
+                {totalPages > 1 && (
+                  <p className="text-muted">
+                    Showing <b>{itemsPerPage}</b> of <b>{products?.length}</b>{" "}
+                    records
+                  </p>
                 )}
               </div>
-              {/*Section: Wishlist*/}
             </div>
           </main>
 
@@ -676,7 +625,7 @@ function Products() {
           >
             <div className="container">
               <div className="row justify-content-center">
-                <div className="col-12 col-sm-8 mb-4 ">
+                <div className="col-12 col-sm-8 mb-4">
                   <div className="section-heading text-center">
                     <h6>Pricing Plans</h6>
                     <h3>Choose Your Perfect Plan</h3>
@@ -687,10 +636,11 @@ function Products() {
                   </div>
                 </div>
               </div>
-              <div className="row justify-content-center">
+
+              <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 justify-content-center">
                 {/* Basic Plan */}
-                <div className="col-12 col-sm-8 col-md-6 col-lg-4">
-                  <div className="single_price_plan">
+                <div className="col">
+                  <div className="single_price_plan h-100">
                     <div className="title">
                       <h3>Basic</h3>
                       <p>For Individual Shoppers</p>
@@ -716,16 +666,16 @@ function Products() {
                       </p>
                     </div>
                     <div className="button">
-                      <a className="btn-main-pricing" href="/register">
+                      <Link className="btn-main-pricing" to="/register">
                         Get Started
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
 
                 {/* Premium Plan */}
-                <div className="col-12 col-sm-8 col-md-6 col-lg-4">
-                  <div className="single_price_plan active">
+                <div className="col">
+                  <div className="single_price_plan active h-100">
                     <div className="side-shape"></div>
                     <div className="title">
                       <span>Popular</span>
@@ -753,16 +703,16 @@ function Products() {
                       </p>
                     </div>
                     <div className="button">
-                      <a className="btn-main-pricing" href="/register">
+                      <Link className="btn-main-pricing" to="/register">
                         Get Started
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
 
                 {/* Enterprise Plan */}
-                <div className="col-12 col-sm-8 col-md-6 col-lg-4">
-                  <div className="single_price_plan">
+                <div className="col">
+                  <div className="single_price_plan h-100">
                     <div className="title">
                       <h3>Enterprise</h3>
                       <p>For Business Customers</p>
@@ -788,132 +738,22 @@ function Products() {
                       </p>
                     </div>
                     <div className="button">
-                      <a className="btn-main-pricing" href="/register">
+                      <Link className="btn-main-pricing" to="/register">
                         Get Started
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </section>
-
-          {/* end of pricing plans section */}
-
-          {/* <main>
-            <section className="text-center container">
-              <div className="row mt-4 mb-3">
-                <div className="col-lg-6 col-md-8 mx-auto">
-                  <h1 className="fw-light">Category</h1>
-                  <p className="lead text-muted">Our Latest Categories</p>
-                </div>
-              </div>
-            </section>
-            <div className="d-flex justify-content-center">
-              {category.map((c) => (
-                <div
-                  key={c.id}
-                  className="align-items-center d-flex flex-column"
-                  style={{
-                    background: "#e8e8e8",
-                    marginLeft: "10px",
-                    borderRadius: "10px",
-                    padding: "30px",
-                  }}
-                >
-                  <img
-                    src={c.image}
-                    alt=""
-                    style={{
-                      width: "80px",
-                      height: "80px",
-                      objectFit: "cover",
-                    }}
-                  />
-                  <p>
-                    <a href="" className="text-dark">
-                      {c.title}
-                    </a>
-                  </p>
-                </div>
-              ))}
-            </div>
-            <section className="text-center container mt-5">
-              <div className="row py-lg-5">
-                <div className="col-lg-6 col-md-8 mx-auto">
-                  <h1 className="fw-light">Trending Products</h1>
-                  <p className="lead text-muted">
-                    Something short and leading about the collection below—its
-                    contents
-                  </p>
-                </div>
-              </div>
-            </section>
-            <div className="album py-5 bg-light">
-              <div className="container">
-                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
-                  {featuredProducts.map((product) => (
-                    <div className="col-lg-4 col-md-12 mb-4" key={product.id}>
-                      <div className="card">
-                        <div
-                          className="bg-image hover-zoom ripple"
-                          data-mdb-ripple-color="light"
-                        >
-                          <img
-                            src={product.image}
-                            className="w-100"
-                            style={{
-                              width: "100px",
-                              height: "300px",
-                              objectFit: "cover",
-                            }}
-                          />
-                        </div>
-                        <div className="card-body card-text p-0 ">
-                          <a href="" className="text-reset">
-                            <h5 className="card-title mb-3 ">
-                              {product.title.slice(0, 30)}...
-                            </h5>
-                          </a>
-                          <a href="" className="text-reset">
-                            <p>{product?.brand.title}</p>
-                          </a>
-                          <h6 className="mb-3">
-                            {addon.currency_sign}
-                            {product.price}
-                          </h6>
-
-                          <div className="heart-container">
-                            <button
-                              type="button"
-                              className="btn btn-primary me-1 mb-1 btn-main-pricing"
-                            >
-                              Add to cart
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-danger px-3 me-1 mb-1 btn-main-pricing"
-                            >
-                              <i className="fas fa-heart" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </main> */}
         </div>
-      )}
-
-      {loading === true && (
-        <div className="container text-center">
+      ) : (
+        <div className="container text-center py-5">
           <img
-            className=""
+            className="img-fluid"
             src="https://cdn.dribbble.com/users/2046015/screenshots/5973727/06-loader_telega.gif"
-            alt=""
+            alt="Loading..."
           />
         </div>
       )}
