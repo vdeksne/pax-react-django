@@ -1,99 +1,84 @@
-import React, { useState, useEffect } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import moment from 'moment';
-import Chart from "chart.js/auto";
-import { Pie, Line } from "react-chartjs-2";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import moment from "moment";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 
-import apiInstance from '../../utils/axios';
-import UserData from '../plugin/UserData';
-import Sidebar from './Sidebar';
-import Swal from 'sweetalert2';
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
-
+import apiInstance from "../../utils/axios";
+import UserData from "../plugin/UserData";
+import Sidebar from "./Sidebar";
 
 function Dashboard() {
+  const [stats, setStats] = useState(null);
+  const [products, setProducts] = useState(null);
+  const [orders, setOrders] = useState(null);
+  const [orderChartData, setOrderChartData] = useState(null);
+  const [productsChartData, setProductsChartData] = useState(null);
 
-  const [stats, setStats] = useState(null)
-  const [products, setProducts] = useState(null)
-  const [orders, setOrders] = useState(null)
-  const [orderChartData, setOrderChartData] = useState(null)
-  const [productsChartData, setProductsChartData] = useState(null)
-
-
-  const axios = apiInstance
-  const userData = UserData()
-  const navigate = useNavigate()
-
-  if (UserData()?.vendor_id === 0) {
-    window.location.href = '/vendor/register/'
-  }
-
-
-  if (userData?.vendor_id !== 0) {
-
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const response = await axios.get(`vendor/stats/${userData?.vendor_id}/`)
-          setStats(response.data[0]);
-        } catch (error) {
-          console.error('Error fetching data:', error);
-        }
-      };
-
-      fetchData();
-    }, []);
-
-
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const response = await axios.get(`vendor/products/${userData?.vendor_id}/`)
-          setProducts(response.data);
-        } catch (error) {
-          console.error('Error fetching data:', error);
-        }
-      };
-
-      fetchData();
-    }, []);
-
-
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const response = await axios.get(`vendor/orders/${userData?.vendor_id}/`)
-          setOrders(response.data);
-        } catch (error) {
-          console.error('Error fetching data:', error);
-        }
-      };
-
-      fetchData();
-    }, []);
-  }
+  const axios = apiInstance;
+  const userData = UserData();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchChartData = async () => {
+    if (userData?.vendor_id === 0) {
+      navigate("/vendor/register/");
+      return;
+    }
+
+    const fetchAllData = async () => {
       try {
-        const order_response = await axios.get(`vendor-orders-report-chart/${userData?.vendor_id}/`);
-        setOrderChartData(order_response.data);
+        const [
+          statsResponse,
+          productsResponse,
+          ordersResponse,
+          orderChartResponse,
+          productChartResponse,
+        ] = await Promise.all([
+          axios.get(`vendor/stats/${userData?.vendor_id}/`),
+          axios.get(`vendor/products/${userData?.vendor_id}/`),
+          axios.get(`vendor/orders/${userData?.vendor_id}/`),
+          axios.get(`vendor-orders-report-chart/${userData?.vendor_id}/`),
+          axios.get(`vendor-products-report-chart/${userData?.vendor_id}/`),
+        ]);
 
-        const product_response = await axios.get(`vendor-products-report-chart/${userData?.vendor_id}/`);
-        setProductsChartData(product_response.data);
-
+        setStats(statsResponse.data[0]);
+        setProducts(productsResponse.data);
+        setOrders(ordersResponse.data);
+        setOrderChartData(orderChartResponse.data);
+        setProductsChartData(productChartResponse.data);
       } catch (error) {
-        console.log(error);
+        console.error("Error fetching data:", error);
       }
     };
-    fetchChartData();
-  }, [])
 
-  const order_months = orderChartData?.map(item => item.month);
-  const order_counts = orderChartData?.map(item => item.orders);
+    fetchAllData();
+  }, [userData?.vendor_id, axios, navigate]);
 
-  const product_labels = productsChartData?.map(item => item.month);
-  const product_count = productsChartData?.map(item => item.orders);
+  const order_months = orderChartData?.map((item) => item.month);
+  const order_counts = orderChartData?.map((item) => item.orders);
+
+  const product_labels = productsChartData?.map((item) => item.month);
+  const product_count = productsChartData?.map((item) => item.orders);
 
   const order_data = {
     labels: order_months,
@@ -103,12 +88,10 @@ function Dashboard() {
         data: order_counts,
         fill: true,
         backgroundColor: "rgba(75,192,192,0.2)",
-        borderColor: "rgba(75,192,192,1)"
+        borderColor: "rgba(75,192,192,1)",
       },
-
-
-    ]
-  }
+    ],
+  };
 
   const product_data = {
     labels: product_labels,
@@ -118,24 +101,23 @@ function Dashboard() {
         data: product_count,
         fill: true,
         backgroundColor: "#ba9ede",
-        borderColor: "#6100e0"
+        borderColor: "#6100e0",
       },
-
-
-    ]
-  }
-
-
+    ],
+  };
 
   return (
-    <div className="container-fluid" id="main" >
+    <div className="container-fluid" id="main">
       <div className="row row-offcanvas row-offcanvas-left h-100">
         <Sidebar />
         <div className="col-md-9 col-lg-10 main mt-4">
           <div className="row mb-3 text-white">
             <div className="col-xl-4 col-lg-6 mb-2">
               <div className="card card-inverse card-success">
-                <div className="card-block bg-success p-3">
+                <div
+                  className="card-block p-3"
+                  style={{ backgroundColor: "#C28F00" }}
+                >
                   <div className="rotate">
                     <i className="bi bi-grid fa-5x" />
                   </div>
@@ -146,7 +128,10 @@ function Dashboard() {
             </div>
             <div className="col-xl-4 col-lg-6 mb-2">
               <div className="card card-inverse card-danger">
-                <div className="card-block bg-danger p-3">
+                <div
+                  className="card-block p-3"
+                  style={{ backgroundColor: "#C28F00" }}
+                >
                   <div className="rotate">
                     <i className="bi bi-cart-check fa-5x" />
                   </div>
@@ -158,7 +143,10 @@ function Dashboard() {
 
             <div className="col-xl-4 col-lg-6 mb-2">
               <div className="card card-inverse card-warning">
-                <div className="card-block bg-warning p-3">
+                <div
+                  className="card-block p-3"
+                  style={{ backgroundColor: "#C28F00" }}
+                >
                   <div className="rotate">
                     <i className="bi bi-currency-dollar fa-5x" />
                   </div>
@@ -175,35 +163,74 @@ function Dashboard() {
               <h4>Chart Analytics</h4>
             </div>
           </div>
-          <Link className='btn btn-primary me-2'>Daily Report</Link>
-          <Link className='btn btn-primary me-2'>Monthly Report</Link>
-          <Link className='btn btn-primary me-2'>Yearly Report</Link>
+          <div className="row">
+            <div className="col d-flex justify-content-center">
+              <Link className="btn-main-pricing me-2">Daily Report</Link>
+              <Link className="btn-main-pricing me-2">Monthly Report</Link>
+              <Link className="btn-main-pricing me-2">Yearly Report</Link>
+            </div>
+          </div>
           <div className="row my-2">
             <div className="col-lg-6 ">
-              <div className="card">
-                <div className="card-body" >
-                  <Line data={order_data} style={{ height: 300, minWidth: "630px" }} />
+              <div className="card overflow-hidden">
+                <div className="card-body">
+                  <Line
+                    data={order_data}
+                    style={{ height: 300, minWidth: "630px" }}
+                  />
                 </div>
               </div>
             </div>
             <div className="col-lg-6">
-              <div className="card">
-                <div className="card-body" >
-                  <Line data={product_data} style={{ height: 300, minWidth: "630px" }} />
+              <div className="card overflow-hidden">
+                <div className="card-body">
+                  <Line
+                    data={product_data}
+                    style={{ height: 300, minWidth: "630px" }}
+                  />
                 </div>
               </div>
             </div>
           </div>
           <a id="layouts" />
           <div className="mb-3 mt-5" style={{ marginBottom: 300 }}>
-            <nav className='mb-5'>
+            <nav className="mb-5">
               <div className="nav nav-tabs" id="nav-tab" role="tablist">
-                <button className="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home" aria-selected="true"> <i className='bi bi-grid-fill'></i> Product</button>
-                <button className="nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile" aria-selected="false"> <i className='fas fa-shopping-cart'></i> Orders</button>
+                <button
+                  className="nav-link active"
+                  id="nav-home-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#nav-home"
+                  type="button"
+                  role="tab"
+                  aria-controls="nav-home"
+                  aria-selected="true"
+                >
+                  {" "}
+                  <i className="bi bi-grid-fill"></i> Product
+                </button>
+                <button
+                  className="nav-link"
+                  id="nav-profile-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#nav-profile"
+                  type="button"
+                  role="tab"
+                  aria-controls="nav-profile"
+                  aria-selected="false"
+                >
+                  {" "}
+                  <i className="fas fa-shopping-cart"></i> Orders
+                </button>
               </div>
             </nav>
             <div className="tab-content" id="nav-tabContent">
-              <div className="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
+              <div
+                className="tab-pane fade show active"
+                id="nav-home"
+                role="tabpanel"
+                aria-labelledby="nav-home-tab"
+              >
                 <h4>Products</h4>
                 <table className="table">
                   <thead className="table-dark">
@@ -227,22 +254,38 @@ function Dashboard() {
                         <td>{p.order_count}</td>
                         <td>{p?.status?.toUpperCase()}</td>
                         <td>
-                          <Link to={`/detail/${p.slug}`} className="btn btn-primary mb-1 me-2"><i className="fas fa-eye" /></Link>
-                          <Link to="" className="btn btn-success mb-1 me-2"><i className="fas fa-edit" /></Link>
-                          <Link to="" className="btn btn-danger mb-1 me-2"><i className="fas fa-trash" /></Link>
+                          <Link
+                            to={`/detail/${p.slug}`}
+                            className="btn  mb-1 me-2"
+                          >
+                            <i className="fas fa-eye" />
+                          </Link>
+                          <Link to="" className="btn  mb-1 me-2">
+                            <i className="fas fa-edit" />
+                          </Link>
+                          <Link to="" className="btn  mb-1 me-2">
+                            <i className="fas fa-trash" />
+                          </Link>
                         </td>
                       </tr>
                     ))}
 
-                    {products < 1 &&
-                      <h5 className='mt-4 p-3'>No products yet</h5>
-                    }
-
-
+                    {products < 1 && (
+                      <tr>
+                        <td colSpan="7" className="text-center">
+                          <h5 className="mt-4 p-3">No products yet</h5>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
-              <div className="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
+              <div
+                className="tab-pane fade"
+                id="nav-profile"
+                role="tabpanel"
+                aria-labelledby="nav-profile-tab"
+              >
                 <h4>Products</h4>
                 <table className="table">
                   <thead className="table-dark">
@@ -262,18 +305,20 @@ function Dashboard() {
                         <td>{moment(o.date).format("MM/DD/YYYY")}</td>
                         <td>{o.order_status}</td>
                         <td>
-                          <a href="" className="btn btn-primary mb-1">
+                          <a href="" className="btn mb-1">
                             <i className="fas fa-eye" />
                           </a>
-
                         </td>
                       </tr>
                     ))}
 
-                    {orders < 1 &&
-                      <h5 className='mt-4 p-3'>No orders yet</h5>
-                    }
-
+                    {orders < 1 && (
+                      <tr>
+                        <td colSpan="5" className="text-center">
+                          <h5 className="mt-4 p-3">No orders yet</h5>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -281,8 +326,8 @@ function Dashboard() {
           </div>
         </div>
       </div>
-    </div >
-  )
+    </div>
+  );
 }
 
-export default Dashboard
+export default Dashboard;

@@ -11,9 +11,10 @@ import { CartContext } from "../plugin/Context";
 
 function Cart() {
   const [cart, setCart] = useState([]);
-  const [cartTotal, setCartTotal] = useState([]);
+  const [cartTotal, setCartTotal] = useState({});
   const [productQuantities, setProductQuantities] = useState({});
-  let [isAddingToCart] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddingToCart] = useState("");
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,7 +23,7 @@ function Cart() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [country, setCountry] = useState("");
-  const [setCartCount] = useContext(CartContext);
+  const { updateCartCount } = useContext(CartContext);
 
   const axios = apiInstance;
   const userData = UserData();
@@ -31,43 +32,58 @@ function Cart() {
   let navigate = useNavigate();
 
   // Get cart Items
-  const fetchCartData = (cartId, userId) => {
-    const url = userId
-      ? `cart-list/${cartId}/${userId}/`
-      : `cart-list/${cartId}/`;
+  const fetchCartData = async (cartId, userId) => {
+    try {
+      const url = userId
+        ? `cart-list/${cartId}/${userId}/`
+        : `cart-list/${cartId}/`;
 
-    axios.get(url).then((res) => {
-      setCart(res.data);
-    });
+      const response = await axios.get(url);
+      console.log("Cart data:", response.data); // Debug log
+      setCart(response.data);
+    } catch (error) {
+      console.error("Error fetching cart data:", error);
+    }
   };
 
   // Get Cart Totals
   const fetchCartTotal = async (cartId, userId) => {
-    const url = userId
-      ? `cart-detail/${cartId}/${userId}/`
-      : `cart-detail/${cartId}/`;
-    axios.get(url).then((res) => {
-      setCartTotal(res.data);
-    });
+    try {
+      const url = userId
+        ? `cart-detail/${cartId}/${userId}/`
+        : `cart-detail/${cartId}/`;
+      const response = await axios.get(url);
+      setCartTotal(response.data);
+    } catch (error) {
+      console.error("Error fetching cart total:", error);
+    }
+  };
+
+  // Combined fetch function
+  const fetchCartDataAndTotal = async (cartId, userId) => {
+    if (!cartId) return;
+
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        fetchCartData(cartId, userId),
+        fetchCartTotal(cartId, userId),
+      ]);
+    } catch (error) {
+      console.error("Error fetching cart data and total:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    console.log(cartTotal);
-  }, [cartTotal]);
-
-  useEffect(() => {
-    if (cart_id !== null || cart_id !== undefined) {
-      if (userData !== undefined) {
-        fetchCartData(cart_id, userData.user_id);
-        fetchCartTotal(cart_id, userData.user_id);
-      } else {
-        fetchCartData(cart_id, null);
-        fetchCartTotal(cart_id, null);
-      }
-    } else {
-      window.location.href("/");
+    if (!cart_id) {
+      navigate("/");
+      return;
     }
-  }, [cart_id, userData]);
+
+    fetchCartDataAndTotal(cart_id, userData?.user_id);
+  }, [cart_id, userData?.user_id]);
 
   useEffect(() => {
     const initialQuantities = {};
@@ -97,7 +113,7 @@ function Cart() {
     const qtyValue = productQuantities[product_id];
 
     try {
-      // Await the addToCart function
+      setIsLoading(true);
       await addToCart(
         product_id,
         userData?.user_id,
@@ -111,36 +127,69 @@ function Cart() {
         isAddingToCart
       );
 
-      // Fetch the latest cart data after addToCart is completed
-      fetchCartData(cart_id, userData?.user_id);
-      fetchCartTotal(cart_id, userData?.user_id);
+      await fetchCartDataAndTotal(cart_id, userData?.user_id);
     } catch (error) {
-      // Handle error, e.g., display an error message
-      console.log(error);
+      console.error("Error updating cart:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to update cart. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Remove Item From Cart
   const handleDeleteClick = async (cartId, itemId) => {
-    const url = userData?.user_id
-      ? `cart-delete/${cartId}/${itemId}/${userData.user_id}/`
-      : `cart-delete/${cartId}/${itemId}/`;
-
     try {
-      await axios.delete(url);
-      // Add any additional logic or state updates after successful deletion
-      fetchCartData(cart_id, userData?.user_id);
-      fetchCartTotal(cart_id, userData?.user_id);
+      setIsLoading(true);
 
-      const cart_url = userData?.user_id
-        ? `cart-list/${cart_id}/${userData?.user_id}/`
-        : `cart-list/${cart_id}/`;
-      const response = await axios.get(cart_url);
+      // Debug logs to check the values
+      console.log("Cart ID:", cartId);
+      console.log("Item ID:", itemId);
+      console.log("User ID:", userData?.user_id);
+      console.log("Cart items:", cart); // Debug log to see cart items
 
-      setCartCount(response.data.length);
+      // Make sure itemId is a number and cartId is a string
+      const url = userData?.user_id
+        ? `cart-delete/${cartId}/${itemId}/${userData.user_id}/`
+        : `cart-delete/${cartId}/${itemId}/`;
+
+      console.log("Deleting cart item with URL:", url); // Debug log
+
+      const response = await axios.delete(url);
+
+      if (response.status === 200 || response.status === 204) {
+        // Refresh cart data after successful deletion
+        await fetchCartDataAndTotal(cart_id, userData?.user_id);
+        await updateCartCount();
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Item removed from cart successfully",
+        });
+      } else {
+        throw new Error("Failed to delete item");
+      }
     } catch (error) {
       console.error("Error deleting item:", error);
-      // Handle errors or update state accordingly
+      let errorMessage = "Failed to remove item. Please try again.";
+
+      if (error.response?.status === 404) {
+        errorMessage =
+          "Item not found in cart. It may have been already removed.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -21,7 +21,7 @@ function Shop() {
   const [colorValue, setColorValue] = useState("No Color");
   const [sizeValue, setSizeValue] = useState("No Size");
   const [qtyValue, setQtyValue] = useState(1);
-  let [cartCount, setCartCount] = useContext(CartContext);
+  const { cartCount, updateCartCount } = useContext(CartContext);
 
   let [isAddingToCart, setIsAddingToCart] = useState("Add To Cart");
   const [loadingStates, setLoadingStates] = useState({});
@@ -105,13 +105,8 @@ function Shop() {
       setSizeValue("No Size");
       setQtyValue(0);
 
-      const url = userData?.user_id
-        ? `cart-list/${cart_id}/${userData?.user_id}/`
-        : `cart-list/${cart_id}/`;
-      const response = await axios.get(url);
-
-      setCartCount(response.data.length);
-      console.log(response.data.length);
+      // Update cart count using the context function
+      await updateCartCount();
     } catch (error) {
       console.log(error);
 
@@ -155,8 +150,8 @@ function Shop() {
         <section className="text-center">
           <h4 className="mb-4">{products?.length} Product(s) </h4>
           <div className="row">
-            {products.map((product, index) => (
-              <div className="col-lg-4 col-md-12 mb-4" key={index.id}>
+            {products.map((product) => (
+              <div className="col-lg-4 col-md-12 mb-4" key={product.id}>
                 <div className="card">
                   <div
                     className="bg-image hover-zoom ripple"
@@ -204,7 +199,7 @@ function Shop() {
                       </h5>
                     </Link>
                     <Link to="/" className="text-reset">
-                      <p>{product?.brand.title}</p>
+                      <p>{product?.brand?.title || "No Brand"}</p>
                     </Link>
                     <h6 className="mb-3">${product.price}</h6>
 
@@ -212,7 +207,7 @@ function Shop() {
                     (product.size && product.size.length > 0) ? (
                       <div className="btn-group">
                         <button
-                          className="btn btn-primary dropdown-toggle"
+                          className="btn-main-pricing dropdown-toggle"
                           type="button"
                           id="dropdownMenuClickable"
                           data-bs-toggle="dropdown"
@@ -230,7 +225,7 @@ function Shop() {
                           <div className="d-flex flex-column mb-2 mt-2 p-1">
                             <div className="p-1 mt-0 pt-0 d-flex flex-wrap">
                               <>
-                                <li>
+                                <li key={`qty-${product.id}`}>
                                   <input
                                     type="number"
                                     className="form-control"
@@ -254,23 +249,21 @@ function Shop() {
                                 {selectedSize[product.id] || "Select a size"}
                               </li>
                               <div className="p-1 mt-0 pt-0 d-flex flex-wrap">
-                                {product?.size?.map((size, index) => (
-                                  <>
-                                    <li key={index}>
-                                      <button
-                                        className="btn btn-secondary btn-sm me-2 mb-1"
-                                        onClick={(e) =>
-                                          handleSizeButtonClick(
-                                            e,
-                                            product.id,
-                                            size.name
-                                          )
-                                        }
-                                      >
-                                        {size.name}
-                                      </button>
-                                    </li>
-                                  </>
+                                {product?.size?.map((size) => (
+                                  <li key={`size-${product.id}-${size.id}`}>
+                                    <button
+                                      className="btn btn-sm me-2 mb-1"
+                                      onClick={(e) =>
+                                        handleSizeButtonClick(
+                                          e,
+                                          product.id,
+                                          size.name
+                                        )
+                                      }
+                                    >
+                                      {size.name}
+                                    </button>
+                                  </li>
                                 ))}
                               </div>
                             </div>
@@ -284,32 +277,29 @@ function Shop() {
                                 {selectedColors[product.id] || "Select a color"}
                               </li>
                               <div className="p-1 mt-0 pt-0 d-flex flex-wrap">
-                                {product?.color?.map((color, index) => (
-                                  <>
+                                {product?.color?.map((color) => (
+                                  <li key={`color-${product.id}-${color.id}`}>
                                     <input
                                       type="hidden"
                                       className={`color_name${color.id}`}
                                       name=""
                                       id=""
                                     />
-                                    <li key={index}>
-                                      <button
-                                        key={color.id}
-                                        className="color-button btn p-3 me-2"
-                                        style={{
-                                          backgroundColor: color.color_code,
-                                        }}
-                                        onClick={(e) =>
-                                          handleColorButtonClick(
-                                            e,
-                                            product.id,
-                                            color.name,
-                                            color.image
-                                          )
-                                        }
-                                      ></button>
-                                    </li>
-                                  </>
+                                    <button
+                                      className="color-button p-3 me-2"
+                                      style={{
+                                        backgroundColor: color.color_code,
+                                      }}
+                                      onClick={(e) =>
+                                        handleColorButtonClick(
+                                          e,
+                                          product.id,
+                                          color.name,
+                                          color.image
+                                        )
+                                      }
+                                    ></button>
+                                  </li>
                                 ))}
                               </div>
                             </div>
@@ -329,7 +319,7 @@ function Shop() {
                                 loadingStates[product.id] === "Adding..."
                               }
                               type="button"
-                              className="btn btn-primary me-1 mb-1"
+                              className="btn-main-pricing"
                             >
                               {loadingStates[product.id] === "Added to Cart" ? (
                                 <>
@@ -361,7 +351,7 @@ function Shop() {
                         }
                         disabled={loadingStates[product.id] === "Adding..."}
                         type="button"
-                        className="btn btn-primary me-1 mb-1"
+                        className="btn-main-pricing me-1 mb-1"
                       >
                         {loadingStates[product.id] === "Added to Cart" ? (
                           <>
@@ -384,7 +374,7 @@ function Shop() {
                     <button
                       onClick={() => handleAddToWishlist(product.id)}
                       type="button"
-                      className="btn btn-danger px-3 ms-2 "
+                      className="btn px-3 ms-2 "
                     >
                       <i className="fas fa-heart" />
                     </button>

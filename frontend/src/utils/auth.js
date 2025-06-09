@@ -25,68 +25,56 @@ const Toast = Swal.mixin({
 // Function to handle user login
 export const login = async (email, password) => {
   try {
-    // Making a POST request to obtain user tokens
-    const { data, status } = await axios.post("user/token/", {
+    const { data } = await axios.post("user/token/", {
       email,
       password,
     });
 
-    // If the request is successful (status code 200), set authentication user and display success toast
-    if (status === 200) {
+    if (data?.access && data?.refresh) {
       setAuthUser(data.access, data.refresh);
 
-      // Displaying a success toast notification
       Toast.fire({
         icon: "success",
         title: "Signed in successfully",
       });
-    }
 
-    // Returning data and error information
-    return { data, error: null };
+      return { data, error: null };
+    }
+    return { data: null, error: "Invalid response from server" };
   } catch (error) {
-    // Handling errors and returning data and error information
     return {
       data: null,
-      error: error.response.data?.detail || "Something went wrong",
+      error: error.response?.data?.detail || "Something went wrong",
     };
   }
 };
 
 // Function to handle user registration
-export const register = async (
-  full_name,
-  email,
-  phone,
-  password,
-  password2
-) => {
+export const register = async (fullname, email, phone, password, password2) => {
   try {
-    // Making a POST request to register a new user
     const { data } = await axios.post("user/register/", {
-      full_name,
+      fullname,
       email,
       phone,
       password,
       password2,
     });
 
-    // Logging in the newly registered user and displaying success toast
-    await login(email, password);
+    if (data?.access && data?.refresh) {
+      setAuthUser(data.access, data.refresh);
 
-    // Displaying a success toast notification
-    Toast.fire({
-      icon: "success",
-      title: "Signed Up Successfully",
-    });
+      Toast.fire({
+        icon: "success",
+        title: "Registered successfully",
+      });
 
-    // Returning data and error information
-    return { data, error: null };
+      return { data, error: null };
+    }
+    return { data: null, error: "Invalid response from server" };
   } catch (error) {
-    // Handling errors and returning data and error information
     return {
       data: null,
-      error: error.response.data || "Something went wrong",
+      error: error.response?.data?.detail || "Something went wrong",
     };
   }
 };
@@ -96,30 +84,36 @@ export const logout = () => {
   // Removing access and refresh tokens from cookies, resetting user state, and displaying success toast
   Cookies.remove("access_token");
   Cookies.remove("refresh_token");
-  useAuthStore.getState().setUser(null);
+  useAuthStore.getState().logout();
 
   // Displaying a success toast notification
   Toast.fire({
     icon: "success",
-    title: "You have been logged out.",
+    title: "Logged out successfully",
   });
 };
 
 // Function to set the authenticated user on page load
 export const setUser = async () => {
-  // Retrieving access and refresh tokens from cookies
   const accessToken = Cookies.get("access_token");
   const refreshToken = Cookies.get("refresh_token");
 
-  // Checking if tokens are present
   if (!accessToken || !refreshToken) {
+    useAuthStore.getState().logout();
     return;
   }
 
-  // If access token is expired, refresh it; otherwise, set the authenticated user
   if (isAccessTokenExpired(accessToken)) {
-    const response = await getRefreshToken(refreshToken);
-    setAuthUser(response.access, response.refresh);
+    try {
+      const response = await getRefreshToken(refreshToken);
+      if (response?.access) {
+        setAuthUser(response.access, response.refresh);
+      } else {
+        logout();
+      }
+    } catch (error) {
+      logout();
+    }
   } else {
     setAuthUser(accessToken, refreshToken);
   }
@@ -127,47 +121,41 @@ export const setUser = async () => {
 
 // Function to set the authenticated user and update user state
 export const setAuthUser = (access_token, refresh_token) => {
-  // Setting access and refresh tokens in cookies with expiration dates
-  Cookies.set("access_token", access_token, {
-    expires: 1, // Access token expires in 1 day
-    secure: true,
-  });
+  try {
+    Cookies.set("access_token", access_token, {
+      expires: 1,
+      secure: true,
+    });
 
-  Cookies.set("refresh_token", refresh_token, {
-    expires: 7, // Refresh token expires in 7 days
-    secure: true,
-  });
+    Cookies.set("refresh_token", refresh_token, {
+      expires: 7,
+      secure: true,
+    });
 
-  // Decoding access token to get user information
-  const user = jwt_decode(access_token) ?? null;
-
-  // If user information is present, update user state; otherwise, set loading state to false
-  if (user) {
-    useAuthStore.getState().setUser(user);
+    const user = jwt_decode(access_token);
+    if (user) {
+      useAuthStore.getState().setUser(user);
+    }
+  } catch (error) {
+    console.error("Error setting auth user:", error);
+    logout();
   }
-  useAuthStore.getState().setLoading(false);
 };
 
 // Function to refresh the access token using the refresh token
-export const getRefreshToken = async () => {
-  // Retrieving refresh token from cookies and making a POST request to refresh the access token
-  const refresh_token = Cookies.get("refresh_token");
-  const response = await axios.post("user/token/refresh/", {
+export const getRefreshToken = async (refresh_token) => {
+  const { data } = await axios.post("user/token/refresh/", {
     refresh: refresh_token,
   });
-
-  // Returning the refreshed access token
-  return response.data;
+  return data;
 };
 
 // Function to check if the access token is expired
-export const isAccessTokenExpired = (accessToken) => {
+export const isAccessTokenExpired = (token) => {
   try {
-    // Decoding the access token and checking if it has expired
-    const decodedToken = jwt_decode(accessToken);
-    return decodedToken.exp < Date.now() / 1000;
-  } catch (err) {
-    // Returning true if the token is invalid or expired
+    const decoded = jwt_decode(token);
+    return decoded.exp * 1000 < Date.now();
+  } catch {
     return true;
   }
 };

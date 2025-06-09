@@ -1,20 +1,27 @@
-import React, { useState, useEffect } from 'react'
-import apiInstance from '../../utils/axios';
-import UserData from '../plugin/UserData';
-
+import { useEffect, useState } from "react";
+import apiInstance from "../../utils/axios";
+import UserData from "./UserData";
 
 function UseProfileData() {
-    const [profile, setProfile] = useState([])
+  const [profileData, setProfileData] = useState(null);
+  const userData = UserData();
 
-    const axios = apiInstance
-    const userData = UserData()
-
-    useEffect(() => {
-        axios.get(`user/profile/${userData?.user_id}/`).then((res) => {
-            setProfile(res.data);
+  useEffect(() => {
+    if (userData?.user_id) {
+      apiInstance
+        .get(`/user/profile/${userData.user_id}/`)
+        .then((res) => {
+          console.log("Profile API Response:", res.data);
+          setProfileData(res.data);
         })
-    }, [])
-    return profile
+        .catch((error) => {
+          console.error("Error fetching profile:", error);
+          setProfileData(null);
+        });
+    }
+  }, [userData?.user_id]);
+
+  return profileData;
 }
 
-export default UseProfileData
+export default UseProfileData;

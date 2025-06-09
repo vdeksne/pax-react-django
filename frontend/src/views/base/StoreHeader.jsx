@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import "../../App.css";
 
 function StoreHeader() {
-  const [cartCount] = useContext(CartContext);
+  const { cartCount } = useContext(CartContext);
   const [search, setSearch] = useState("");
 
   const [isLoggedIn, user] = useAuthStore((state) => [
@@ -48,7 +48,7 @@ function StoreHeader() {
                   viewBox="0 0 21 15"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="hamburger-svg"
+                  className="hamburger-svg nav-item-burge"
                   style={{ display: "block" }} // Add display block to ensure it's hidden when menu opens
                 >
                   <path

@@ -187,12 +187,16 @@ function Settings() {
       <div className="row row-offcanvas row-offcanvas-left h-100">
         <Sidebar />
         <div className="col-md-9 col-lg-10 main mt-4">
-          <div className="container">
+          <div className="container gap-2">
             <div className="main-body">
-              <ul className="nav nav-pills mb-3" id="pills-tab" role="tablist">
+              <ul
+                className="nav nav-pills mb-3 gap-4"
+                id="pills-tab"
+                role="tablist"
+              >
                 <li className="nav-item" role="presentation">
                   <button
-                    className="nav-link active"
+                    className="btn-main-pricing active"
                     id="pills-shop-tab"
                     data-bs-toggle="pill"
                     data-bs-target="#pills-shop"
@@ -206,7 +210,7 @@ function Settings() {
                 </li>
                 <li className="nav-item" role="presentation">
                   <button
-                    className="nav-link"
+                    className="btn-main-pricing"
                     id="pills-home-tab"
                     data-bs-toggle="pill"
                     data-bs-target="#pills-home"
@@ -233,7 +237,8 @@ function Settings() {
                           <div className="d-flex flex-column align-items-center text-center">
                             <img
                               src={
-                                vendorImage || "https://via.placeholder.com/150"
+                                vendorImage ||
+                                "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png"
                               }
                               style={{
                                 width: 160,
@@ -324,7 +329,7 @@ function Settings() {
                               </div>
                               <div className="col-lg-12 mt-4 mb-3 d-flex">
                                 <button
-                                  className="btn btn-success"
+                                  className="btn-main-pricing"
                                   type="submit"
                                 >
                                   Update Shop{" "}
@@ -332,7 +337,7 @@ function Settings() {
                                 </button>
                                 <Link
                                   to={`/vendor/${vendorData.slug}/`}
-                                  className="btn btn-primary ms-2"
+                                  className="btn-main-pricing ms-2"
                                   type="submit"
                                 >
                                   View Shop <i className="fas fa-shop" />{" "}
@@ -525,11 +530,10 @@ function Settings() {
                               </div>
                               <div className="col-lg-6 mt-4 mb-3">
                                 <button
-                                  className="btn btn-success"
+                                  className="btn-main-pricing"
                                   type="submit"
                                 >
-                                  Update Profile{" "}
-                                  <i className="fas fa-check-circle" />{" "}
+                                  Update Profile
                                 </button>
                               </div>
                             </div>
@@ -589,16 +593,13 @@ function Settings() {
                 >
                   <form className="form-group shadow p-4 rounded">
                     <div className="mb-3">
-                      <label
-                        htmlFor="exampleInputEmail1"
-                        className="form-label"
-                      >
+                      <label htmlFor="oldPassword" className="form-label">
                         Old Password
                       </label>
                       <input
-                        type="email"
+                        type="password"
                         className="form-control"
-                        id="exampleInputEmail1"
+                        id="oldPassword"
                         aria-describedby="emailHelp"
                       />
                       <div id="emailHelp" className="form-text">
@@ -606,29 +607,23 @@ function Settings() {
                       </div>
                     </div>
                     <div className="mb-3">
-                      <label
-                        htmlFor="exampleInputPassword1"
-                        className="form-label"
-                      >
+                      <label htmlFor="newPassword" className="form-label">
                         New Password
                       </label>
                       <input
                         type="password"
                         className="form-control"
-                        id="exampleInputPassword1"
+                        id="newPassword"
                       />
                     </div>
                     <div className="mb-3">
-                      <label
-                        htmlFor="exampleInputPassword1"
-                        className="form-label"
-                      >
+                      <label htmlFor="confirmPassword" className="form-label">
                         Confirm New Password
                       </label>
                       <input
                         type="password"
                         className="form-control"
-                        id="exampleInputPassword1"
+                        id="confirmPassword"
                       />
                     </div>
                     <button type="submit" className="btn btn-primary">

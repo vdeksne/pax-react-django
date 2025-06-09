@@ -36,7 +36,7 @@ function Products() {
   const [colorValue, setColorValue] = useState("No Color");
   const [sizeValue, setSizeValue] = useState("No Size");
   const [qtyValue, setQtyValue] = useState(1);
-  let [setCartCount] = useContext(CartContext);
+  const { cartCount, updateCartCount } = useContext(CartContext);
 
   // Pagination
   // Define the number of items to be displayed per page
@@ -178,7 +178,7 @@ function Products() {
         : `cart-list/${cart_id}/`;
       const response = await axios.get(url);
 
-      setCartCount(response.data.length);
+      updateCartCount(response.data.length);
       console.log(response.data.length);
     } catch (error) {
       console.log(error);
@@ -207,8 +207,8 @@ function Products() {
             <div className="container-products">
               <section className="text-center container">
                 <div className="position-relative">
-                  <iframe
-                    src="https://player.vimeo.com/video/1060392805?autoplay=1&loop=1&muted=1&background=1"
+                  <video
+                    src="/assets/video/desktop.mp4"
                     style={{
                       width: "100%",
                       objectFit: "cover",
@@ -222,7 +222,11 @@ function Products() {
                     frameBorder="0"
                     allow="autoplay; fullscreen"
                     title="Products Hero Video"
-                  ></iframe>
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  ></video>
 
                   <div
                     className="position-absolute top-0 start-0 w-100 d-flex align-items-center justify-content-center"

@@ -22,7 +22,7 @@ import OrderDetail from "./views/customer/OrderDetail";
 import Wishlist from "./views/customer/Wishlist";
 import Notifications from "./views/customer/Notifications";
 import Settings from "./views/customer/Settings";
-import { CartContext } from "./views/plugin/Context";
+import { CartProvider } from "./views/plugin/Context";
 import UserData from "./views/plugin/UserData";
 import CartID from "./views/plugin/cartID";
 import apiInstance from "./utils/axios";
@@ -55,20 +55,27 @@ function App() {
   const axios = apiInstance;
 
   useEffect(() => {
-    const url = userData?.user_id
-      ? `cart-list/${cart_id}/${userData?.user_id}/`
-      : `cart-list/${cart_id}/`;
-    axios.get(url).then((res) => {
-      setCartCount(res.data.length);
-    });
-  }, []);
+    if (!cart_id) return;
+
+    const fetchCartCount = async () => {
+      try {
+        const url = userData?.user_id
+          ? `cart-list/${cart_id}/${userData?.user_id}/`
+          : `cart-list/${cart_id}/`;
+        const response = await axios.get(url);
+        setCartCount(response.data.length);
+      } catch (error) {
+        console.error("Error fetching cart count:", error);
+      }
+    };
+
+    fetchCartCount();
+  }, [cart_id, userData?.user_id, axios]);
 
   return (
-    <CartContext.Provider value={[cartCount, setCartCount]}>
-      {/* // Initialize the router with 'BrowserRouter'. */}
+    <CartProvider>
       <BrowserRouter>
         <StoreHeader />
-        {/* // Wrap everything in the 'MainWrapper' component. */}
         <MainWrapper>
           <Routes>
             {" "}
@@ -276,7 +283,7 @@ function App() {
         </MainWrapper>
         <StoreFooter />
       </BrowserRouter>
-    </CartContext.Provider>
+    </CartProvider>
   );
 }
 

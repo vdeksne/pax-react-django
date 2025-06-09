@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import apiInstance from "../../utils/axios";
 import UserData from "../plugin/UserData";
-import UseProfileData from "../plugin/UseProfileData";
 import Swal from "sweetalert2";
 import "../../assets/css/account.css";
 
@@ -111,7 +110,7 @@ function Settings() {
               <div className="col-lg-9 mt-1">
                 <section className="">
                   <main className="mb-5" style={{}}>
-                    <div className="container px-4">
+                    <div className="container px-4 text-start">
                       {/* Section: Summary */}
                       <section className="">
                         <h3 className="mb-3">
@@ -258,17 +257,14 @@ function Settings() {
                           {loading === false && (
                             <button
                               type="submit"
-                              className="btn-primary-settings mt-5"
+                              className="btn-main-pricing mt-5"
                             >
                               Save Changes
                             </button>
                           )}
 
                           {loading === true && (
-                            <button
-                              disabled
-                              className=" btn-primary-settings mt-5"
-                            >
+                            <button disabled className=" btn-main-pricing mt-5">
                               Saving...{" "}
                               <i className="fas fa-spinner fa-spin"></i>
                             </button>

@@ -106,7 +106,7 @@ button:focus-visible {
   position: relative;
   z-index: 1;
   /* background-color: #fff; */
-  padding: 2rem 0;
+  padding: 1rem 0;
 }
 
 .single_price_plan {
@@ -239,6 +239,16 @@ button:focus-visible {
   color: #6c757d;
 }
 
+@media (max-width: 420px) {
+  .section-heading h3 {
+    font-size: 1.5rem;
+    text-align: left;
+  }
+  .section-heading p {
+    font-size: 1rem;
+  }
+}
+
 .section-heading .line {
   width: 120px;
   height: 5px;
@@ -305,7 +315,7 @@ button:focus-visible {
 }
 
 .btn:active {
-  background-color: #ffffff !important;
+  background-color: transparent !important;
   color: #000000 !important;
   border: 1px solid #ffffff !important;
 }
@@ -318,7 +328,7 @@ div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
   font-size: 1em;
 }
 button:focus {
-  background-color: #ffffff !important;
+  background-color: transparent !important;
   color: #000000 !important;
   border: 1px solid #ffffff !important;
   box-shadow: none !important;

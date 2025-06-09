@@ -125,3 +125,12 @@
 .btn-primary-settings:hover {
   background-color: #ffc31f !important;
 }
+.bg-primary-yellow {
+  color: #000;
+  background-color: #ffc31f;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}

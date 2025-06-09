@@ -1,9 +1,8 @@
-import { React, useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FaCheckCircle, FaShoppingCart, FaSpinner } from "react-icons/fa";
 
 import apiInstance from "../../utils/axios";
-import Addon from "../plugin/Addon";
 import GetCurrentAddress from "../plugin/UserCountry";
 import UserData from "../plugin/UserData";
 import CartID from "../plugin/cartID";
@@ -14,10 +13,10 @@ import { CartContext } from "../plugin/Context";
 function Search() {
   const [products, setProducts] = useState([]);
 
-  let [isAddingToCart, setIsAddingToCart] = useState("Add To Cart");
+  let [setIsAddingToCart] = useState("Add To Cart");
   const [loadingStates, setLoadingStates] = useState({});
   let [loading, setLoading] = useState(true);
-  let [searchResults, setSearchResults] = useState([]);
+  let [searchResults] = useState([]);
 
   const axios = apiInstance;
   const [searchParams] = useSearchParams();
@@ -36,7 +35,7 @@ function Search() {
   const [colorValue, setColorValue] = useState("No Color");
   const [sizeValue, setSizeValue] = useState("No Size");
   const [qtyValue, setQtyValue] = useState(1);
-  let [cartCount, setCartCount] = useContext(CartContext);
+  const { updateCartCount } = useContext(CartContext);
 
   // Define an async function for fetching data from an API endpoint and updating the state.
   // This function takes two parameters:
@@ -121,13 +120,7 @@ function Search() {
       setSizeValue("No Size");
       setQtyValue(0);
 
-      const url = userData?.user_id
-        ? `cart-list/${cart_id}/${userData?.user_id}/`
-        : `cart-list/${cart_id}/`;
-      const response = await axios.get(url);
-
-      setCartCount(response.data.length);
-      console.log(response.data.length);
+      await updateCartCount();
     } catch (error) {
       console.log(error);
 
@@ -321,7 +314,7 @@ function Search() {
                                       loadingStates[product.id] === "Adding..."
                                     }
                                     type="button"
-                                    className="btn btn-primary me-1 mb-1"
+                                    className="btn-main-pricing me-1 mb-1"
                                   >
                                     {loadingStates[product.id] ===
                                     "Added to Cart" ? (
@@ -358,7 +351,7 @@ function Search() {
                                 loadingStates[product.id] === "Adding..."
                               }
                               type="button"
-                              className="btn btn-primary me-1 mb-1"
+                              className="btn-main-pricing me-1 mb-1 mt-4"
                             >
                               {loadingStates[product.id] === "Added to Cart" ? (
                                 <>

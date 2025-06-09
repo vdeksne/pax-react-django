@@ -127,7 +127,7 @@ function Orders() {
                 {/* Section: Summary */}
                 {/* Section: MSC */}
                 <section className="">
-                  <div className="row rounded shadow p-3">
+                  <div className="row rounded shadow p-3 overflow-scroll">
                     <div className="col-lg-12 mb-4 mb-lg-0 h-100">
                       <table className="table align-middle mb-0 bg-white">
                         <thead className="bg-light">
