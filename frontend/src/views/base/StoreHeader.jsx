@@ -1,12 +1,14 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { useAuthStore } from "../../store/auth";
 import { Link } from "react-router-dom";
 import { CartContext } from "../plugin/Context";
 import { useNavigate } from "react-router-dom";
 import "../../App.css";
+import apiInstance from "../../utils/axios";
+import CartID from "../plugin/cartID";
 
 function StoreHeader() {
-  const { cartCount } = useContext(CartContext);
+  const { cartCount, updateCartCount } = useContext(CartContext);
   const [search, setSearch] = useState("");
 
   const [isLoggedIn, user] = useAuthStore((state) => [
@@ -15,9 +17,28 @@ function StoreHeader() {
   ]);
 
   const userData = user();
-  console.log("user().vendor_id", userData?.vendor_id);
+  const axios = apiInstance;
+  const cart_id = CartID();
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      try {
+        const url = userData?.id
+          ? `cart-list/${cart_id}/${userData.id}/`
+          : `cart-list/${cart_id}/`;
+
+        const response = await axios.get(url);
+        const filteredCart = response.data.filter((item) => item.qty > 0);
+        updateCartCount(filteredCart.length);
+      } catch (error) {
+        console.error("Error fetching cart count:", error);
+      }
+    };
+
+    fetchCartCount();
+  }, [cart_id, userData?.id]);
 
   const handleSearchChange = (event) => {
     setSearch(event.target.value);

@@ -22,7 +22,7 @@ const Logout = () => {
                         <Link to="/login" className="btn-main-pricing me-2">
                           Login <i className="fas fa-sign-in-alt"></i>{" "}
                         </Link>
-                        <Link to="/login" className="btn-main-pricing">
+                        <Link to="/register" className="btn-main-pricing">
                           Register <i className="fas fa-user-plus"></i>{" "}
                         </Link>
                       </div>
