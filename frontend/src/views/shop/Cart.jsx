@@ -40,7 +40,9 @@ function Cart() {
 
       const response = await axios.get(url);
       console.log("Cart data:", response.data); // Debug log
-      setCart(response.data);
+      // Filter out items with qty 0
+      const filteredCart = response.data.filter((item) => item.qty > 0);
+      setCart(filteredCart);
     } catch (error) {
       console.error("Error fetching cart data:", error);
     }
@@ -94,7 +96,7 @@ function Cart() {
   }, [cart]);
 
   const handleQtyChange = (event, product_id) => {
-    const quantity = event.target.value;
+    const quantity = Math.max(1, parseInt(event.target.value) || 1); // Ensure minimum value of 1
     setProductQuantities((prevQuantities) => ({
       ...prevQuantities,
       [product_id]: quantity,
@@ -111,6 +113,15 @@ function Cart() {
     size
   ) => {
     const qtyValue = productQuantities[product_id];
+
+    if (qtyValue < 1) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Quantity",
+        text: "Quantity must be at least 1",
+      });
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -140,7 +151,76 @@ function Cart() {
     }
   };
 
-  // Remove Item From Cart
+  // Add this new function to clean up invalid cart items
+  const cleanupInvalidCartItems = async () => {
+    try {
+      // Force refresh cart data
+      await fetchCartDataAndTotal(cart_id, userData?.user_id);
+      // Update cart count
+      await updateCartCount();
+    } catch (error) {
+      console.error("Error cleaning up cart:", error);
+    }
+  };
+
+  // Add clear cart function
+  const handleClearCart = async () => {
+    try {
+      setIsLoading(true);
+
+      // Show confirmation dialog
+      const result = await Swal.fire({
+        title: "Clear Cart?",
+        text: "Are you sure you want to remove all items from your cart?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, clear cart!",
+      });
+
+      if (result.isConfirmed) {
+        // Remove all items from local state immediately
+        setCart([]);
+
+        // Delete all cart items from backend
+        const url = userData?.user_id
+          ? `cart-delete-all/${cart_id}/${userData.user_id}/`
+          : `cart-delete-all/${cart_id}/`;
+
+        try {
+          await axios.delete(url);
+          await cleanupInvalidCartItems();
+
+          Swal.fire({
+            icon: "success",
+            title: "Cart Cleared",
+            text: "All items have been removed from your cart.",
+          });
+        } catch (error) {
+          console.error("Error clearing cart:", error);
+          // Even if the backend call fails, we've already cleared the local state
+          await cleanupInvalidCartItems();
+
+          Swal.fire({
+            icon: "info",
+            title: "Cart Cleared",
+            text: "All items have been removed from your cart.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error in clear cart:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to clear cart. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleDeleteClick = async (cartId, itemId) => {
     try {
       setIsLoading(true);
@@ -149,37 +229,49 @@ function Cart() {
       console.log("Cart ID:", cartId);
       console.log("Item ID:", itemId);
       console.log("User ID:", userData?.user_id);
-      console.log("Cart items:", cart); // Debug log to see cart items
 
-      // Make sure itemId is a number and cartId is a string
+      // Remove the item from the local cart state immediately
+      setCart((prevCart) => prevCart.filter((item) => item.id !== itemId));
+
+      // Construct the URL based on whether user is logged in
       const url = userData?.user_id
         ? `cart-delete/${cartId}/${itemId}/${userData.user_id}/`
         : `cart-delete/${cartId}/${itemId}/`;
 
-      console.log("Deleting cart item with URL:", url); // Debug log
+      console.log("Deleting cart item with URL:", url);
 
-      const response = await axios.delete(url);
+      try {
+        const response = await axios.delete(url);
+        if (response.status === 200 || response.status === 204) {
+          // Refresh cart data and total
+          await cleanupInvalidCartItems();
 
-      if (response.status === 200 || response.status === 204) {
-        // Refresh cart data after successful deletion
-        await fetchCartDataAndTotal(cart_id, userData?.user_id);
-        await updateCartCount();
-        Swal.fire({
-          icon: "success",
-          title: "Success",
-          text: "Item removed from cart successfully",
-        });
-      } else {
-        throw new Error("Failed to delete item");
+          Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "Item removed from cart successfully",
+          });
+        }
+      } catch (error) {
+        if (error.response?.status === 404) {
+          // If the item is not found, it might have been already deleted
+          // Just refresh the cart data
+          await cleanupInvalidCartItems();
+
+          Swal.fire({
+            icon: "info",
+            title: "Item Removed",
+            text: "Item was already removed from cart.",
+          });
+        } else {
+          throw error; // Re-throw other errors
+        }
       }
     } catch (error) {
       console.error("Error deleting item:", error);
       let errorMessage = "Failed to remove item. Please try again.";
 
-      if (error.response?.status === 404) {
-        errorMessage =
-          "Item not found in cart. It may have been already removed.";
-      } else if (error.response?.data?.message) {
+      if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
 
@@ -192,6 +284,13 @@ function Cart() {
       setIsLoading(false);
     }
   };
+
+  // Add cleanup on component mount
+  useEffect(() => {
+    if (cart_id) {
+      cleanupInvalidCartItems();
+    }
+  }, [cart_id]);
 
   // Shipping Details
   const handleChange = (e) => {
@@ -588,12 +687,21 @@ function Cart() {
                         <span>${cartTotal.total?.toFixed(2)}</span>
                       </div>
                       {cart.length > 0 && (
-                        <button
-                          onClick={createCartOrder}
-                          className="btn-main-pricing"
-                        >
-                          Checkout
-                        </button>
+                        <>
+                          <button
+                            onClick={createCartOrder}
+                            className="btn-main-pricing mb-3 w-100"
+                          >
+                            Checkout
+                          </button>
+                          <button
+                            onClick={handleClearCart}
+                            className="btn btn-danger w-100"
+                          >
+                            <i className="fas fa-trash me-2"></i>
+                            Clear Cart
+                          </button>
+                        </>
                       )}
                     </section>
                   </div>

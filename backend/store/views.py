@@ -181,16 +181,30 @@ class CartListView(generics.ListAPIView):
 
     def get_queryset(self):
         cart_id = self.kwargs['cart_id']
-        user_id = self.kwargs.get('user_id')  # Use get() method to handle the case where user_id is not present
+        user_id = self.kwargs.get('user_id')
 
-        
-        if user_id is not None:
-            user = User.objects.get(id=user_id)
-            queryset = Cart.objects.filter(Q(user=user, cart_id=cart_id) | Q(user=user))
-        else:
-            queryset = Cart.objects.filter(cart_id=cart_id)
-        
-        return queryset
+        try:
+            if user_id is not None:
+                user = User.objects.get(id=user_id)
+                # First, clean up any invalid cart items
+                invalid_items = Q(qty=0) | Q(product__isnull=True) | Q(product__status__in=['draft', 'disabled'])
+                Cart.objects.filter(Q(user=user, cart_id=cart_id) | Q(user=user)).filter(invalid_items).delete()
+                
+                # Then get the remaining valid items
+                valid_items = Q(qty__gt=0) & Q(product__isnull=False) & Q(product__status='published')
+                queryset = Cart.objects.filter(Q(user=user, cart_id=cart_id) | Q(user=user)).filter(valid_items)
+            else:
+                # First, clean up any invalid cart items
+                invalid_items = Q(qty=0) | Q(product__isnull=True) | Q(product__status__in=['draft', 'disabled'])
+                Cart.objects.filter(cart_id=cart_id).filter(invalid_items).delete()
+                
+                # Then get the remaining valid items
+                valid_items = Q(qty__gt=0) & Q(product__isnull=False) & Q(product__status='published')
+                queryset = Cart.objects.filter(cart_id=cart_id).filter(valid_items)
+            
+            return queryset
+        except User.DoesNotExist:
+            return Cart.objects.none()
     
 
 class CartTotalView(generics.ListAPIView):
@@ -297,21 +311,51 @@ class CartDetailView(generics.RetrieveAPIView):
 
 class CartItemDeleteView(generics.DestroyAPIView):
     serializer_class = CartSerializer
-    lookup_field = 'cart_id'  
+    permission_classes = (AllowAny,)
 
     def get_object(self):
         cart_id = self.kwargs['cart_id']
         item_id = self.kwargs['item_id']
         user_id = self.kwargs.get('user_id')
 
-        if user_id is not None:
-            user = get_object_or_404(User, id=user_id)
-            cart = get_object_or_404(Cart, cart_id=cart_id, id=item_id, user=user)
-        else:
-            cart = get_object_or_404(Cart, cart_id=cart_id, id=item_id)
+        try:
+            if user_id is not None:
+                user = User.objects.get(id=user_id)
+                cart = Cart.objects.get(cart_id=cart_id, id=item_id, user=user)
+            else:
+                cart = Cart.objects.get(cart_id=cart_id, id=item_id)
+            return cart
+        except Cart.DoesNotExist:
+            return None
 
-        return cart
-    
+    def delete(self, request, *args, **kwargs):
+        cart = self.get_object()
+        if cart is None:
+            return Response({"message": "Cart item not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        cart.delete()
+        return Response({"message": "Cart item deleted successfully"}, status=status.HTTP_200_OK)
+
+
+class CartClearView(generics.DestroyAPIView):
+    serializer_class = CartSerializer
+    permission_classes = (AllowAny,)
+
+    def delete(self, request, *args, **kwargs):
+        cart_id = self.kwargs['cart_id']
+        user_id = self.kwargs.get('user_id')
+
+        try:
+            if user_id is not None:
+                user = User.objects.get(id=user_id)
+                Cart.objects.filter(Q(user=user, cart_id=cart_id) | Q(user=user)).delete()
+            else:
+                Cart.objects.filter(cart_id=cart_id).delete()
+            
+            return Response({"message": "Cart cleared successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class CreateOrderView(generics.CreateAPIView):
     serializer_class = CartOrderSerializer
