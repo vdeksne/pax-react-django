@@ -138,10 +138,7 @@ function Products() {
               </Link>
             </div>
           </>
-          <div
-            className="mb-3 mt-2 overflow-scroll"
-            style={{ marginBottom: 300 }}
-          >
+          <div className="mb-3 mt-2 overflow-scroll">
             <table className="table text-start overflow-scroll">
               <thead className="table-dark">
                 <tr>

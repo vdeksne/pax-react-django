@@ -482,7 +482,7 @@ function Cart() {
                                     c.size
                                   )
                                 }
-                                className="ms-2 btn-main-pricing"
+                                className="ms-2 btn"
                               >
                                 <i className="fas fa-rotate-right"></i>
                               </button>
