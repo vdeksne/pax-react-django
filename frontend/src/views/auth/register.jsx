@@ -1,228 +1,219 @@
-import { useEffect, useState } from "react";
-import { register } from "../../utils/auth";
+import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../store/auth";
+import apiInstance from "../../utils/axios";
+import UserData from "../plugin/UserData";
+import { CartContext } from "../plugin/Context";
+import Swal from "sweetalert2";
 
 function Register() {
-  const [fullname, setFullname] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    password2: "",
+    phone: "",
+    full_name: "",
+    user_type: "customer", // Default to customer
+  });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const axios = apiInstance;
+  const { updateCartCount } = useContext(CartContext);
+  const userData = UserData();
 
-  useEffect(() => {
-    if (isLoggedIn()) {
-      navigate("/");
-    }
-  }, []);
-
-  const resetForm = () => {
-    setFullname("");
-    setEmail("");
-    setPhone("");
-    setPassword("");
-    setPassword2("");
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    // Set isLoading to true when the form is submitted
-    setIsLoading(true);
-
-    const { error } = await register(
-      fullname,
-      email,
-      phone,
-      password,
-      password2
-    );
-    if (error) {
-      alert(JSON.stringify(error));
-    } else {
-      navigate("/");
-      resetForm();
+    // Validate passwords match
+    if (formData.password !== formData.password2) {
+      Swal.fire({
+        icon: "error",
+        title: "Registration Failed",
+        text: "Passwords do not match.",
+      });
+      setLoading(false);
+      return;
     }
 
-    // Reset isLoading to false when the operation is complete
-    setIsLoading(false);
+    try {
+      const response = await axios.post("user/register/", formData);
+
+      if (response.data) {
+        Swal.fire({
+          icon: "success",
+          title: "Registration Successful",
+          text: "Please login to continue",
+        }).then(() => {
+          navigate("/login");
+        });
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      console.log("Backend error details:", error.response?.data);
+      Swal.fire({
+        icon: "error",
+        title: "Registration Failed",
+        text:
+          error.response?.data?.message ||
+          "Please check your information and try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // If user is already logged in, redirect them
+  if (userData) {
+    navigate("/");
+    return null;
+  }
+
   return (
-    <>
-      <main className="" style={{ marginBottom: 100, marginTop: 50 }}>
-        <div className="container">
-          {/* Section: Login form */}
-          <section className="">
-            <div className="row d-flex justify-content-center">
-              <div className="col-xl-5 col-md-8">
-                <div className="card rounded-5">
-                  <div className="card-body p-4">
-                    <h3 className="text-center">Register Account</h3>
-                    <br />
-
-                    <div className="tab-content">
-                      <div
-                        className="tab-pane fade show active"
-                        id="pills-login"
-                        role="tabpanel"
-                        aria-labelledby="tab-login"
-                      >
-                        <form onSubmit={handleSubmit}>
-                          {/* Email input */}
-                          <div className="form-outline mb-4">
-                            <label className="form-label" htmlFor="Full Name">
-                              Full Name
-                            </label>
-                            <input
-                              type="text"
-                              id="username"
-                              onChange={(e) => setFullname(e.target.value)}
-                              placeholder="Full Name"
-                              required
-                              className="form-control"
-                            />
-                          </div>
-                          <div className="form-outline mb-4">
-                            <label className="form-label" htmlFor="loginName">
-                              Email
-                            </label>
-                            <input
-                              type="email"
-                              id="email"
-                              onChange={(e) => setEmail(e.target.value)}
-                              placeholder="Email Address"
-                              required
-                              className="form-control"
-                            />
-                          </div>
-
-                          <div className="form-outline mb-4">
-                            <label className="form-label" htmlFor="loginName">
-                              Mobile Number
-                            </label>
-                            <input
-                              type="text"
-                              id="phone"
-                              onChange={(e) => setPhone(e.target.value)}
-                              placeholder="Mobile Number"
-                              required
-                              className="form-control"
-                            />
-                          </div>
-                          <div className="form-outline mb-4">
-                            <label
-                              className="form-label"
-                              htmlFor="loginPassword"
-                            >
-                              Password
-                            </label>
-                            <input
-                              type="password"
-                              id="password"
-                              onChange={(e) => setPassword(e.target.value)}
-                              placeholder="Password"
-                              className="form-control"
-                            />
-                          </div>
-                          {/* Password input */}
-                          <div className="form-outline mb-4">
-                            <label
-                              className="form-label"
-                              htmlFor="loginPassword"
-                            >
-                              Confirm Password
-                            </label>
-                            <input
-                              type="password"
-                              id="confirm-password"
-                              onChange={(e) => setPassword2(e.target.value)}
-                              placeholder="Confirm Password"
-                              required
-                              className="form-control"
-                            />
-                          </div>
-                          <p className="fw-bold text-danger">
-                            {password2 !== password
-                              ? "Passwords do not match"
-                              : ""}
-                          </p>
-
-                          <button
-                            className="btn-main-pricing w-100"
-                            type="submit"
-                            disabled={isLoading}
-                          >
-                            {isLoading ? (
-                              <>
-                                <span className="mr-2 ">Processing...</span>
-                                <i className="fas fa-spinner fa-spin" />
-                              </>
-                            ) : (
-                              <>
-                                <span className="mr-2">Sign Up</span>
-                                <i className="fas fa-user-plus" />
-                              </>
-                            )}
-                          </button>
-
-                          <div className="text-center">
-                            <p className="mt-4">
-                              Already have an account?{" "}
-                              <Link to="/login">Login</Link>
-                            </p>
-                          </div>
-                        </form>
-
-                        {/* <form>
-                                    <div className="text-center mt-4 mb-2">
-                                    <p>Sign up with:</p>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link btn-lg btn-floating"
-                                        data-ripple-color="primary"
-                                    >
-                                        <i className="fab fa-facebook-f" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link btn-lg btn-floating"
-                                        data-ripple-color="primary"
-                                    >
-                                        <i className="fab fa-google" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link btn-lg btn-floating"
-                                        data-ripple-color="primary"
-                                    >
-                                        <i className="fab fa-twitter" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link btn-lg btn-floating"
-                                        data-ripple-color="primary"
-                                    >
-                                        <i className="fab fa-github" />
-                                    </button>
-                                    </div>
-                                    
-                                </form> */}
-                      </div>
-                    </div>
-                    {/* Pills content */}
-                  </div>
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <h2 className="text-center mb-4">Register</h2>
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="username" className="form-label">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
+                <div className="mb-3">
+                  <label htmlFor="email" className="form-label">
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="password" className="form-label">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="password2" className="form-label">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="password2"
+                    name="password2"
+                    value={formData.password2}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="phone" className="form-label">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="full_name" className="form-label">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="full_name"
+                    name="full_name"
+                    value={formData.full_name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="user_type" className="form-label">
+                    Account Type
+                  </label>
+                  <select
+                    className="form-select"
+                    id="user_type"
+                    name="user_type"
+                    value={formData.user_type}
+                    onChange={handleChange}
+                  >
+                    <option value="customer">Customer</option>
+                    <option value="vendor">Vendor</option>
+                  </select>
+                </div>
+                <div className="d-grid gap-2">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        Loading...
+                      </>
+                    ) : (
+                      "Register"
+                    )}
+                  </button>
+                </div>
+              </form>
+              <div className="mt-3 text-center">
+                <p>
+                  Already have an account? <Link to="/login">Login here</Link>
+                </p>
               </div>
             </div>
-          </section>
-          {/* Section: Login form */}
+          </div>
         </div>
-      </main>
-    </>
+      </div>
+    </div>
   );
 }
 

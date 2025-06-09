@@ -1,3 +1,12 @@
+from rest_framework import generics
+from store.models import Product, Specification, Color, Size, Gallery, Vendor
+from store.serializers import ProductSerializer, SpecificationSerializer, ColorSerializer, SizeSerializer, GallerySerializer
+from rest_framework.permissions import AllowAny
+from django.db import transaction
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+
 class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
@@ -284,3 +293,8 @@ class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
         serializer = serializer_class(data=data, many=True, context={'product_instance': product_instance})
         serializer.is_valid(raise_exception=True)
         serializer.save(product=product_instance)
+
+class RegisterView(APIView):
+    def post(self, request):
+        # Dummy implementation, replace with real registration logic if needed
+        return Response({"message": "User registered"}, status=status.HTTP_201_CREATED)

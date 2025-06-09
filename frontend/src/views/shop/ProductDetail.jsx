@@ -26,11 +26,11 @@ function ProductDetail() {
   const [colorValue, setColorValue] = useState("No Color");
   const [sizeValue, setSizeValue] = useState("No Size");
   const [qtyValue, setQtyValue] = useState(1);
+  const { cartCount, updateCartCount } = useContext(CartContext);
 
   let [isAddingToCart, setIsAddingToCart] = useState("Add To Cart");
   let [loading, setLoading] = useState(true);
   let [wishlistLoading, setWishlistLoading] = useState(false);
-  const [cartCount, setCartCount] = useContext(CartContext);
 
   const [createReview, setCreateReview] = useState({
     user_id: 0,
@@ -120,7 +120,7 @@ function ProductDetail() {
         : `cart-list/${cart_id}/`;
       const response = await axios.get(url);
 
-      setCartCount(response.data.length);
+      updateCartCount(response.data.length);
       console.log(response.data.length);
       Swal.fire({
         icon: "success",

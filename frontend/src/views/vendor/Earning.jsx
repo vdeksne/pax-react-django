@@ -224,10 +224,7 @@ function Earning() {
                     <div className="col-md-12 py-1">
                       <div className="card">
                         <div className="card-body">
-                          <Line
-                            data={revenue_data}
-                            style={{ height: 300, minWidth: "630px" }}
-                          />
+                          <Line data={revenue_data} style={{ height: 300 }} />
                         </div>
                       </div>
                     </div>

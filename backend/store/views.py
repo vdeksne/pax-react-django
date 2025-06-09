@@ -671,4 +671,9 @@ class CategoryDetailView(generics.RetrieveAPIView):
         slug = self.kwargs.get('slug')
         category = get_object_or_404(Category, slug=slug, active=True)
         return category
+
+class RegisterView(APIView):
+    def post(self, request):
+        # Your registration logic here
+        return Response({"message": "User registered"}, status=status.HTTP_201_CREATED)
        

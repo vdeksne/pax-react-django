@@ -174,20 +174,14 @@ function Dashboard() {
             <div className="col-lg-6 ">
               <div className="card overflow-hidden">
                 <div className="card-body">
-                  <Line
-                    data={order_data}
-                    style={{ height: 300, minWidth: "630px" }}
-                  />
+                  <Line data={order_data} style={{ height: 300 }} />
                 </div>
               </div>
             </div>
             <div className="col-lg-6">
               <div className="card overflow-hidden">
                 <div className="card-body">
-                  <Line
-                    data={product_data}
-                    style={{ height: 300, minWidth: "630px" }}
-                  />
+                  <Line data={product_data} style={{ height: 300 }} />
                 </div>
               </div>
             </div>

@@ -5,6 +5,7 @@ from customer import views as customer_views
 from vendor import views as vendor_views
 
 from rest_framework_simplejwt.views import TokenRefreshView
+from .views import RegisterView
 
 
 urlpatterns = [
@@ -90,6 +91,6 @@ urlpatterns = [
     path('vendor/couriers/', vendor_views.CourierListAPIView.as_view()),
     path('vendor/order-item-detail/<int:pk>/', vendor_views.OrderItemDetailAPIView.as_view()),
 
-    
-
+    # New registration endpoint
+    path('api/v1/register/', RegisterView.as_view(), name='register'),
 ]

@@ -95,20 +95,17 @@ function AddProduct() {
 
   const handleProductFileChange = (event) => {
     const file = event.target.files[0];
-
     if (file) {
       const reader = new FileReader();
-
       reader.onloadend = () => {
         setProduct({
           ...product,
           image: {
-            file: event.target.files[0],
+            file: file,
             preview: reader.result,
           },
         });
       };
-
       reader.readAsDataURL(file);
     }
   };
@@ -125,6 +122,8 @@ function AddProduct() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+
+    // Validate required fields
     if (
       product.title == "" ||
       product.description == "" ||
@@ -134,10 +133,7 @@ function AddProduct() {
       product.stock_qty == "" ||
       product.image === null
     ) {
-      // If any required field is missing, show an error message or take appropriate action
-      console.log("Please fill in all required fields");
       setIsLoading(false);
-
       Swal.fire({
         icon: "warning",
         title: "Missing Fields!",
@@ -146,60 +142,84 @@ function AddProduct() {
       return;
     }
 
+    // Validate image size (max 2MB)
+    if (
+      product.image &&
+      product.image.file &&
+      product.image.file.size > 2 * 1024 * 1024
+    ) {
+      setIsLoading(false);
+      Swal.fire({
+        icon: "error",
+        title: "Image Too Large",
+        text: "Please upload an image smaller than 2MB",
+      });
+      return;
+    }
+
     try {
-      // Create a FormData object
-      setIsLoading(true);
       const formData = new FormData();
+
+      // Log the product data before sending
+      console.log("Product data being sent:", {
+        ...product,
+        image: product.image ? "Image file present" : "No image",
+      });
 
       // Append product data
       Object.entries(product).forEach(([key, value]) => {
-        if (key === "image" && value) {
-          formData.append(key, value.file); // Assuming 'value' is an object with 'file' property
-        } else {
+        if (key === "image" && value && value.file) {
+          console.log("Appending image file:", value.file);
+          formData.append("image", value.file);
+        } else if (key !== "image") {
           formData.append(key, value);
         }
       });
 
-      // Append specifications data
-      specifications.forEach((specification, index) => {
-        Object.entries(specification).forEach(([key, value]) => {
-          formData.append(`specifications[${index}][${key}]`, value);
+      // Only append non-empty specifications
+      specifications
+        .filter((spec) => spec.title && spec.content)
+        .forEach((specification, index) => {
+          Object.entries(specification).forEach(([key, value]) => {
+            formData.append(`specifications[${index}][${key}]`, value);
+          });
         });
-      });
 
-      colors.forEach((color, index) => {
-        Object.entries(color).forEach(([key, value]) => {
-          if (
-            key === "image" &&
-            value &&
-            value.file &&
-            value.file.type.startsWith("image/")
-          ) {
-            formData.append(
-              `colors[${index}][${key}]`,
-              value.file,
-              value.file.name
-            );
-          } else {
-            console.log(String(value));
-            formData.append(`colors[${index}][${key}]`, String(value)); // Convert `value` to a string
-          }
+      // Only append non-empty colors
+      colors
+        .filter((color) => color.name && color.color_code)
+        .forEach((color, index) => {
+          Object.entries(color).forEach(([key, value]) => {
+            if (key === "image" && value && value.file) {
+              formData.append(`colors[${index}][${key}]`, value.file);
+            } else {
+              formData.append(`colors[${index}][${key}]`, String(value));
+            }
+          });
         });
-      });
 
-      // Append sizes data
-      sizes.forEach((size, index) => {
-        Object.entries(size).forEach(([key, value]) => {
-          formData.append(`sizes[${index}][${key}]`, value);
+      // Only append non-empty sizes
+      sizes
+        .filter((size) => size.name && size.price > 0)
+        .forEach((size, index) => {
+          Object.entries(size).forEach(([key, value]) => {
+            formData.append(`sizes[${index}][${key}]`, value);
+          });
         });
-      });
 
-      // Append gallery data
-      gallery.forEach((item, index) => {
-        if (item.image) {
+      // Only append non-empty gallery images
+      gallery
+        .filter((item) => item.image && item.image.file)
+        .forEach((item, index) => {
           formData.append(`gallery[${index}][image]`, item.image.file);
-        }
-      });
+        });
+
+      // Log the FormData contents
+      for (let pair of formData.entries()) {
+        console.log(
+          pair[0] + ": " + (pair[1] instanceof File ? pair[1].name : pair[1])
+        );
+      }
 
       const response = await apiInstance.post(
         `vendor-product-create/${userData?.vendor_id}/`,
@@ -211,17 +231,40 @@ function AddProduct() {
         }
       );
 
-      // navigate('/vendor/products/')
-
-      Swal.fire({
-        icon: "success",
-        title: "Product Created Successfully",
-        text: "This product has been successfully created",
-      });
-
-      const data = await response.json();
+      if (response.status === 201 || response.status === 200) {
+        Swal.fire({
+          icon: "success",
+          title: "Product Created Successfully",
+          text: "This product has been successfully created",
+        });
+        navigate("/vendor/products/");
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
+      console.log("Full error response:", error.response);
+
+      // Extract error message from different possible response formats
+      let errorMessage = "Failed to create product. Please try again.";
+      if (error.response?.data) {
+        if (Array.isArray(error.response.data)) {
+          errorMessage =
+            error.response.data[0]?.image?.[0] ||
+            error.response.data[0]?.message ||
+            errorMessage;
+        } else if (typeof error.response.data === "object") {
+          errorMessage =
+            error.response.data.message ||
+            error.response.data.error ||
+            errorMessage;
+        }
+      }
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: errorMessage,
+      });
+    } finally {
       setIsLoading(false);
     }
   };
