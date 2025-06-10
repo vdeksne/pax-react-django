@@ -1,6 +1,8 @@
-# PAX Shop - E-commerce Platform
+# PAX Shop
 
-A modern e-commerce platform built with React and Django, featuring a robust product management system, user authentication, and seamless shopping experience.
+E-commerce Platform. A modern e-commerce platform built with React and Django, featuring a robust product management system, user authentication, and seamless shopping experience.
+
+![PAX Shop Demo](assets/intro.gif)
 
 ## Features
 
