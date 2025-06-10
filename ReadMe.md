@@ -20,8 +20,8 @@ E-commerce Platform. A modern e-commerce platform built with React and Django, f
   - Category-based navigation
   - Advanced search and filtering
   - Responsive product grid
-
-  <img src="frontend/public/assets/gifs/mobile.gif" alt="PAX Shop Demo" width="300">
+    <br/>
+    <img src="frontend/public/assets/gifs/mobile.gif" alt="PAX Shop Demo" width="300">
 
 - **Shopping Experience**
 
