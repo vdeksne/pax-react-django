@@ -12,12 +12,16 @@ E-commerce Platform. A modern e-commerce platform built with React and Django, f
   - User profile management
   - Role-based access control
 
+  ![PAX Shop Demo](frontend/public/assets/gifs/register.gif)
+
 - **Product Management**
 
   - Dynamic product catalog
   - Category-based navigation
   - Advanced search and filtering
   - Responsive product grid
+
+  ![PAX Shop Demo](frontend/public/assets/gifs/mobile.gif)
 
 - **Shopping Experience**
 
@@ -26,11 +30,16 @@ E-commerce Platform. A modern e-commerce platform built with React and Django, f
   - Order tracking
   - Wishlist functionality
 
+  ![PAX Shop Demo](frontend/public/assets/gifs/pay.gif)
+
 - **Admin Dashboard**
+
   - Product CRUD operations
   - Order management
   - User management
   - Analytics and reporting
+
+  ![PAX Shop Demo](frontend/public/assets/gifs/products.gif)
 
 ### Frontend
 
