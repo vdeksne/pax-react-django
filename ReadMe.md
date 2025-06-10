@@ -2,7 +2,7 @@
 
 E-commerce Platform. A modern e-commerce platform built with React and Django, featuring a robust product management system, user authentication, and seamless shopping experience.
 
-![PAX Shop Demo](assets/intro.gif)
+![PAX Shop Demo](frontend/public/assets/intro.gif)
 
 ## Features
 
