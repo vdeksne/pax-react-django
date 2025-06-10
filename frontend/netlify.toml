@@ -1,6 +1,6 @@
 [build]
-  command = "npm run build"
-  publish = "build"
+  command = "yarn build"
+  publish = "dist"
   base = "frontend"
 
 [[redirects]]
