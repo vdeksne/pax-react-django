@@ -836,11 +836,7 @@ function ProductDetail() {
 
         {loading === true && (
           <div className="container text-center">
-            <img
-              className=""
-              src="https://cdn.dribbble.com/users/2046015/screenshots/5973727/06-loader_telega.gif"
-              alt=""
-            />
+            <img className="" src="/assets/images/loading.gif" alt="" />
           </div>
         )}
       </main>

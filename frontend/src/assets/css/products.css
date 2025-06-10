@@ -1,0 +1,104 @@
+/* Products Page Styles */
+
+/* Hero Video Section */
+.products-main-video-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* align-items: center; */
+  min-height: 100%;
+  padding: 2rem;
+  min-width: 100%;
+  color: #fff;
+  margin: 2rem;
+  padding: 2rem;
+}
+
+.responsive-text {
+  font-size: 2rem;
+  text-align: left;
+}
+.responsive-text-small {
+  font-size: 1.5rem;
+  text-align: left;
+  font-family: "Gotham-Light", sans-serif;
+  width: 45%;
+}
+.heading-main {
+  font-family: "Gotham-Light", sans-serif;
+  font-size: 2rem;
+  line-height: 1.2;
+  text-align: center;
+}
+.category-card {
+  margin: 0.5rem;
+  background: #fff;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  width: clamp(1.5rem, 15vw, 200px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.product-grid-section {
+  margin: 0 2rem;
+  padding-top: 4rem;
+}
+.card-product-grid {
+  height: 100%;
+  padding: 0;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: #fff;
+  background-clip: border-box;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  border-radius: 0.25rem;
+}
+.btn-main-pricing-pagination {
+  display: flex;
+  width: auto;
+  height: 2rem;
+  padding: 0.5rem 1rem;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 120rem;
+  border: var(--letter-spacing-1, 1px) solid var(--color-black-solid, #6b6b6b);
+  background: var(--color-white-20, rgba(255, 255, 255, 0.2));
+  backdrop-filter: blur(7.5px);
+  color: #2d2d2d !important;
+  text-align: center;
+  font-family: "Gotham-Medium", sans-serif;
+  font-size: 0.8rem;
+  font-style: normal;
+  line-height: var(--line-height-20, 1.25rem);
+  letter-spacing: var(--letter-spacing-0_4, 0.025rem);
+  transition: all 0.3s ease;
+}
+.gotham-light {
+  font-family: "Gotham-Light", sans-serif;
+  font-size: 0.8rem;
+  color: #2d2d2d !important;
+}
+@media (max-width: 700px) {
+  .responsive-text {
+    font-size: 1rem;
+  }
+  .responsive-text-small {
+    font-size: 0.9rem;
+    width: 90% !important;
+  }
+  .heading-main {
+    font-size: 1.5rem;
+    text-align: left;
+    padding-left: 1rem;
+  }
+  .product-grid-section {
+    padding-top: 1rem;
+  }
+}
