@@ -10,6 +10,7 @@ import { addToCart } from "../plugin/AddToCart";
 import { addToWishlist } from "../plugin/addToWishlist";
 import { CartContext } from "../plugin/Context";
 import "../../App.css";
+import Swal from "sweetalert2";
 
 // Lazy load components
 const PricingPlans = lazy(() => import("./components/PricingPlans"));
@@ -111,12 +112,34 @@ function Products() {
       return;
     }
 
+    // Validate cart_id
+    if (!cart_id) {
+      console.error("No cart ID available");
+      return;
+    }
+
     setLoadingStates((prev) => ({ ...prev, [product_id]: "Adding..." }));
 
     try {
+      // Get current user data
+      const currentUserData = userData || null;
+
+      // Log the data being sent
+      console.log("Adding to cart with data:", {
+        product_id,
+        user_id: currentUserData?.user_id || "anonymous",
+        qty: qtyValue,
+        price,
+        shipping_amount,
+        country: currentAddress?.country,
+        color: colorValue,
+        size: sizeValue,
+        cart_id,
+      });
+
       const success = await addToCart(
         product_id,
-        userData?.user_id,
+        currentUserData?.user_id,
         qtyValue,
         price,
         shipping_amount,
@@ -135,18 +158,34 @@ function Products() {
         setSizeValue("No Size");
         setQtyValue(1);
 
-        const url = userData?.user_id
-          ? `cart-list/${cart_id}/${userData.user_id}/`
-          : `cart-list/${cart_id}/`;
+        // Update cart count
+        try {
+          const url = currentUserData?.user_id
+            ? `cart-list/${cart_id}/${currentUserData.user_id}/`
+            : `cart-list/${cart_id}/`;
 
-        const response = await axios.get(url);
-        updateCartCount(response.data.length);
+          const response = await axios.get(url);
+          updateCartCount(response.data.length);
+        } catch (error) {
+          console.error("Error updating cart count:", error);
+        }
       } else {
         throw new Error("Failed to add to cart");
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
       setLoadingStates((prev) => ({ ...prev, [product_id]: "Add to Cart" }));
+
+      // Show error message to user
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to add item to cart. Please log in and try again.",
+        toast: true,
+        position: "top",
+        showConfirmButton: false,
+        timer: 3000,
+      });
     }
   };
 

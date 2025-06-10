@@ -83,21 +83,16 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    orders = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = '__all__'
 
-    # def __init__(self, *args, **kwargs):
-    #     super(ProfileSerializer, self).__init__(*args, **kwargs)
-    #     # Customize serialization depth based on the request method.
-    #     request = self.context.get('request')
-    #     if request and request.method == 'POST':
-    #         # When creating a new product FAQ, set serialization depth to 0.
-    #         self.Meta.depth = 0
-    #     else:
-    #         # For other methods, set serialization depth to 3.
-    #         self.Meta.depth = 3
+    def get_orders(self, obj):
+        from store.models import CartOrder
+        orders = CartOrder.objects.filter(buyer=obj.user, payment_status="paid")
+        return orders.count()
 
     def to_representation(self, instance):
         response = super().to_representation(instance)

@@ -35,7 +35,11 @@ export const addToCart = async (
     // Create form data
     const formData = new FormData();
     formData.append("product", product_id.toString());
-    formData.append("user", user_id ? user_id.toString() : "");
+
+    // Handle user_id - if undefined or null, send empty string
+    const userId = user_id ? user_id.toString() : "";
+    formData.append("user", userId);
+
     formData.append("qty", qty.toString());
     formData.append("price", price.toString());
     formData.append("shipping_amount", shipping_amount.toString());
@@ -47,7 +51,7 @@ export const addToCart = async (
     // Log the request data for debugging
     console.log("Sending cart data:", {
       product_id,
-      user_id,
+      user_id: userId || "anonymous",
       qty,
       price,
       shipping_amount,
@@ -96,6 +100,11 @@ export const addToCart = async (
         ) {
           errorMessage =
             "Store configuration is missing. Please contact the administrator.";
+        } else if (
+          error.response.data &&
+          error.response.data.includes("Field 'id'")
+        ) {
+          errorMessage = "Invalid cart data. Please try again.";
         } else {
           errorMessage = "Server error - please try again later";
         }

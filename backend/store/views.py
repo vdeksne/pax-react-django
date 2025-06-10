@@ -44,12 +44,26 @@ PAYPAL_SECRET_ID = settings.PAYPAL_SECRET_ID
 
 
 def send_notification(user=None, vendor=None, order=None, order_item=None):
-    Notification.objects.create(
-        user=user,
-        vendor=vendor,
-        order=order,
-        order_item=order_item,
-    )
+    try:
+        print(f"Creating notification - user: {user}, vendor: {vendor}, order: {order}, order_item: {order_item}")
+        
+        # Validate that at least one of user or vendor is provided
+        if not user and not vendor:
+            print("Error: Neither user nor vendor provided")
+            return None
+            
+        notification = Notification.objects.create(
+            user=user,
+            vendor=vendor,
+            order=order,
+            order_item=order_item,
+            seen=False  # Explicitly set seen to False
+        )
+        print(f"Notification created successfully - id: {notification.id}")
+        return notification
+    except Exception as e:
+        print(f"Error creating notification: {str(e)}")
+        return None
 
 class ConfigSettingsDetailView(generics.RetrieveAPIView):
     serializer_class = ConfigSettingsSerializer

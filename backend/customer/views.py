@@ -104,9 +104,35 @@ class CustomerNotificationView(generics.ListAPIView):
     permission_classes = (AllowAny, )
 
     def get_queryset(self):
-        user_id = self.kwargs['user_id']
-        user = User.objects.get(id=user_id)
-        return Notification.objects.filter(user=user)
+        try:
+            user_id = self.kwargs['user_id']
+            print(f"Fetching notifications for user_id: {user_id}")
+            
+            user = User.objects.get(id=user_id)
+            print(f"Found user: {user.username}")
+            
+            # Only return unseen notifications
+            notifications = Notification.objects.filter(user=user, seen=False).order_by('-date')
+            print(f"Found {notifications.count()} unseen notifications")
+            
+            return notifications
+        except User.DoesNotExist:
+            print(f"User not found with id: {user_id}")
+            return Notification.objects.none()
+        except Exception as e:
+            print(f"Error fetching notifications: {str(e)}")
+            return Notification.objects.none()
+
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+            data = serializer.data
+            print(f"Returning {len(data)} notifications")
+            return Response(data)
+        except Exception as e:
+            print(f"Error in list method: {str(e)}")
+            return Response([], status=status.HTTP_200_OK)
 
 
 class CustomerUpdateView(generics.RetrieveUpdateAPIView):

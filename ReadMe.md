@@ -30,8 +30,6 @@ A modern e-commerce platform built with React and Django, featuring a robust pro
   - User management
   - Analytics and reporting
 
-## Tech Stack
-
 ### Frontend
 
 - React.js
@@ -63,7 +61,11 @@ A modern e-commerce platform built with React and Django, featuring a robust pro
   - Automatic HTTPS
   - Global CDN
   - Custom domain support
-- Backend: [Your backend hosting provider]
+- Backend: Railway
+  - Automated deployments
+  - Built-in PostgreSQL support
+  - Scalable infrastructure
+  - SSL/TLS encryption
 
 ## Prerequisites
 

@@ -3,19 +3,36 @@ import Cookies from "js-cookie";
 import jwtDecode from "jwt-decode";
 
 function UserData() {
-  // Always decode the access token for user info
-  let access_token = Cookies.get("access_token");
-  if (access_token) {
-    try {
-      const decoded = jwtDecode(access_token);
-      return decoded;
-    } catch (e) {
-      // Invalid token, return undefined
-      return undefined;
+  try {
+    // Get the access token from cookies
+    const access_token = Cookies.get("access_token");
+
+    if (!access_token) {
+      console.log("No access token found");
+      return null;
     }
+
+    try {
+      // Decode the token
+      const decoded = jwtDecode(access_token);
+
+      // Validate the decoded data
+      if (!decoded || !decoded.user_id) {
+        console.log("Invalid token data");
+        return null;
+      }
+
+      return decoded;
+    } catch (decodeError) {
+      console.error("Error decoding token:", decodeError);
+      // Clear invalid token
+      Cookies.remove("access_token");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error in UserData:", error);
+    return null;
   }
-  // No access token, return undefined
-  return undefined;
 }
 
 export default UserData;
