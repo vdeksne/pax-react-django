@@ -6,12 +6,7 @@ function StoreFooter() {
     <footer className="footer-container">
       <div className="footer-content">
         <div className="footer-section">
-          <h3>About Us</h3>
-          <p>
-            A global platform for artists and designers to sell, connect, and
-            grow. Fueling creativity and empowering independence - worldwide.
-          </p>
-          <div className="social-links">
+          <div className="social-links text-start black-color font-color-black mb-4">
             <a href="#!">
               <i className="fab fa-facebook-f"></i>
             </a>
@@ -28,11 +23,54 @@ function StoreFooter() {
               <i className="fab fa-pinterest"></i>
             </a>
           </div>
+          <h3
+            className="d-flex justify-content-between"
+            onClick={() => {
+              if (window.innerWidth <= 500) {
+                const p = document.querySelector(".about-us-description");
+                if (p) {
+                  p.style.display =
+                    p.style.display === "none" ? "block" : "none";
+                }
+              }
+            }}
+          >
+            About Us{" "}
+            <i className="fas fa-chevron-down black-color mobile-display-none"></i>
+          </h3>
+          <p
+            className="about-us-description text-start"
+            style={{
+              display: window.innerWidth <= 500 ? "none" : "block",
+            }}
+          >
+            A global platform for artists and designers to sell, connect, and
+            grow. Fueling creativity and empowering independence - worldwide.
+          </p>
         </div>
 
         <div className="footer-section">
-          <h3>Useful Links</h3>
-          <ul className="footer-links">
+          <h3
+            className="d-flex justify-content-between"
+            onClick={() => {
+              if (window.innerWidth <= 500) {
+                const links = document.querySelector(".useful-links");
+                if (links) {
+                  links.style.display =
+                    links.style.display === "none" ? "block" : "none";
+                }
+              }
+            }}
+          >
+            Useful Links{" "}
+            <i className="fas fa-chevron-down black-color mobile-display-none"></i>
+          </h3>
+          <ul
+            className="footer-links useful-links text-start"
+            style={{
+              display: window.innerWidth <= 500 ? "none" : "block",
+            }}
+          >
             <li>
               <a href="#!">Privacy Policy</a>
             </li>
@@ -52,8 +90,27 @@ function StoreFooter() {
         </div>
 
         <div className="footer-section">
-          <h3>Categories</h3>
-          <ul className="footer-links">
+          <h3
+            className="d-flex justify-content-between"
+            onClick={() => {
+              if (window.innerWidth <= 500) {
+                const categories = document.querySelector(".categories-links");
+                if (categories) {
+                  categories.style.display =
+                    categories.style.display === "none" ? "block" : "none";
+                }
+              }
+            }}
+          >
+            Categories{" "}
+            <i className="fas fa-chevron-down black-color mobile-display-none"></i>
+          </h3>
+          <ul
+            className="footer-links categories-links text-start"
+            style={{
+              display: window.innerWidth <= 500 ? "none" : "block",
+            }}
+          >
             <li>
               <a href="#!">Shirts</a>
             </li>
@@ -76,19 +133,42 @@ function StoreFooter() {
         </div>
 
         <div className="footer-section">
-          <h3>Newsletter</h3>
-          <p>Subscribe to our newsletter for updates and exclusive offers.</p>
-          <form className="newsletter-form newsletter-form-footer">
-            <input
-              type="email"
-              className="newsletter-input "
-              placeholder="Enter your email"
-              required
-            />
-            <button type="submit" className=" margin-zero-important">
-              Subscribe
-            </button>
-          </form>
+          <h3
+            className="d-flex justify-content-between"
+            onClick={() => {
+              if (window.innerWidth <= 500) {
+                const newsletter = document.querySelector(
+                  ".newsletter-content"
+                );
+                if (newsletter) {
+                  newsletter.style.display =
+                    newsletter.style.display === "none" ? "block" : "none";
+                }
+              }
+            }}
+          >
+            Newsletter{" "}
+            <i className="fas fa-chevron-down black-color mobile-display-none"></i>
+          </h3>
+          <div
+            className="newsletter-content text-start"
+            style={{
+              display: window.innerWidth <= 500 ? "none" : "block",
+            }}
+          >
+            <p>Subscribe to our newsletter for updates and exclusive offers.</p>
+            <form className="newsletter-form newsletter-form-footer">
+              <input
+                type="email"
+                className="newsletter-input "
+                placeholder="Enter your email"
+                required
+              />
+              <button type="submit" className=" margin-zero-important">
+                Subscribe
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 

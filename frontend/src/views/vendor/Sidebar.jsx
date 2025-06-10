@@ -39,7 +39,7 @@ function Sidebar() {
             ? "100%"
             : isExpanded
             ? "calc(100vh - 5rem)"
-            : "3rem",
+            : "3.7rem",
         backgroundColor: "transparent",
         borderRadius: "0 0.5rem 0.5rem 0",
         marginLeft:
@@ -49,7 +49,7 @@ function Sidebar() {
               : "-2rem"
             : isExpanded
             ? "0"
-            : "-1.5rem",
+            : "-2.3rem",
       }}
     >
       {window.innerWidth >= 768 && (
@@ -80,17 +80,31 @@ function Sidebar() {
         </div>
       )}
 
-      <button
-        className="navbar-toggler d-md-none position-absolute"
-        type="button"
+      <div
         onClick={toggleSidebar}
+        className="d-md-none position-absolute"
         style={{
-          top: "0.3rem",
-          right: "0.3rem",
+          top: "1rem",
+          right: "-1rem",
+          cursor: "pointer",
+          backgroundColor: "#ffd700",
+          width: "1.5rem",
+          height: "1.5rem",
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "transform 0.3s ease",
         }}
       >
-        <span className="navbar-toggler-icon"></span>
-      </button>
+        <i
+          className={`bi bi-chevron-${isExpanded ? "left" : "right"}`}
+          style={{
+            color: "#000",
+            fontSize: "0.8rem",
+          }}
+        />
+      </div>
 
       <div
         className={`${isExpanded ? "show" : "collapse"} d-md-block`}

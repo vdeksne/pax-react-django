@@ -105,7 +105,7 @@
 
 @media (max-width: 900px) {
   .custom-negative {
-    z-index: 10;
+    z-index: 100000;
     position: absolute !important;
     /* margin-top: -2.6rem !important; */
     margin-left: -3rem !important;

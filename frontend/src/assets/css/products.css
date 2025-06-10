@@ -88,6 +88,7 @@
 @media (max-width: 700px) {
   .responsive-text {
     font-size: 1rem;
+    text-align: left;
   }
   .responsive-text-small {
     font-size: 0.9rem;

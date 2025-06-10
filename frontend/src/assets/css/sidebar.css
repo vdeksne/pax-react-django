@@ -164,3 +164,7 @@
 .nav-link-vendor-sidebar.active {
   background-color: #c28f00 !important;
 }
+
+.card {
+  padding: 0;
+}

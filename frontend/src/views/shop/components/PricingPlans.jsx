@@ -1,16 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import "../../../assets/css/products.css";
 
 const PricingPlans = () => {
   return (
     <section className="price_plan_area section_padding_130_80" id="pricing">
       <div className="container">
         <div className="row justify-content-center">
-          <div className="col-12 col-sm-8 mb-4">
-            <div className="section-heading text-center">
-              <h6>Pricing Plans</h6>
-              <h3>Choose Your Perfect Plan</h3>
-              <p>
+          <div className="mb-4">
+            <div className="section-heading text-center gotham-light">
+              <h6 className="responsive-text">Pricing Plans</h6>
+              <h3 className="responsive-text">Choose Your Perfect Plan</h3>
+              <p className="responsive-text">
                 Select the plan that best fits your needs and start selling
                 today.
               </p>
@@ -18,7 +19,7 @@ const PricingPlans = () => {
           </div>
         </div>
 
-        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 justify-content-center">
+        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 justify-content-center text-start">
           {/* Basic Plan */}
           <div className="col">
             <div className="single_price_plan h-100">
