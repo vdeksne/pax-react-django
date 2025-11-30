@@ -6,6 +6,7 @@ from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+import requests
 
 class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = Product.objects.all()
@@ -298,3 +299,45 @@ class RegisterView(APIView):
     def post(self, request):
         # Dummy implementation, replace with real registration logic if needed
         return Response({"message": "User registered"}, status=status.HTTP_201_CREATED)
+
+
+class GeocodeReverseView(APIView):
+    """
+    Proxy endpoint for reverse geocoding using Nominatim API.
+    This avoids CORS issues when calling Nominatim from the frontend.
+    """
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        lat = request.query_params.get('lat')
+        lon = request.query_params.get('lon')
+
+        if not lat or not lon:
+            return Response(
+                {"error": "Latitude and longitude are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Call Nominatim API from backend (no CORS issues)
+            url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
+            headers = {
+                "User-Agent": "YourAppName/1.0"  # Nominatim requires User-Agent
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            return Response(data, status=status.HTTP_200_OK)
+            
+        except requests.exceptions.RequestException as e:
+            return Response(
+                {"error": f"Geocoding service error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Unexpected error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

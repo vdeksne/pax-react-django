@@ -27,7 +27,7 @@ import UserData from "./views/plugin/UserData";
 import CartID from "./views/plugin/cartID";
 import apiInstance from "./utils/axios";
 import Dashboard from "./views/vendor/Dashboard";
-import Products from "./views/vendor/Products";
+import VendorProducts from "./views/vendor/Products";
 import AddProduct from "./views/vendor/AddProduct";
 import UpdateProduct from "./views/vendor/UpdateProduct";
 import VendorOrders from "./views/vendor/Orders";
@@ -46,6 +46,8 @@ import CreatePassword from "./views/auth/createPassword";
 import VendorRegister from "./views/vendor/VendorRegister";
 import OrderItemDetail from "./views/vendor/OrderItemDetail";
 import CategoryProducts from "./views/shop/CategoryProducts";
+import Subscriptions from "./views/shop/Subscriptions";
+import Products from "./views/shop/Products";
 
 function App() {
   // Define the main 'App' component.
@@ -97,6 +99,7 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/create-new-password" element={<CreatePassword />} />
             {/* Store Routes */}
+            <Route path="/shop" element={<Products />} />
             <Route path="/detail/:slug" element={<ProductDetail />} />
             <Route path="/cart/" element={<Cart />} />
             <Route path="/checkout/:order_oid" element={<Checkout />} />
@@ -107,6 +110,7 @@ function App() {
             <Route path="/invoice/:order_oid/" element={<Invoice />} />
             <Route path="/search" element={<Search />} />
             <Route path="/category/:slug" element={<CategoryProducts />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
             {/* Customer Routes */}
             <Route
               path="/customer/account/"
@@ -170,7 +174,7 @@ function App() {
               element={
                 <PrivateRoute>
                   {" "}
-                  <Products />
+                  <VendorProducts />
                 </PrivateRoute>
               }
             />

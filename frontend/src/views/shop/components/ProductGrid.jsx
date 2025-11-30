@@ -133,6 +133,7 @@ const ProductGrid = ({
                                     className="color-button"
                                     style={{
                                       backgroundColor: color.color_code,
+                                      "--color-button-bg": color.color_code,
                                       width: "2rem",
                                       height: "2rem",
                                       borderRadius: "50%",

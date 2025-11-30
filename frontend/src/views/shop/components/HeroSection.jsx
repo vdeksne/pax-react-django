@@ -60,8 +60,8 @@ const HeroSection = ({ userData }) => {
 
             <p className="mb-5 responsive-text-small">
               <span>
-                Empowering artists and designers to share their work, build
-                their brand, and shape their future.
+                Empowering creators to share their work and explorers to find
+                unique products.
               </span>
             </p>
 

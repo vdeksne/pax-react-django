@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import "../../../assets/css/products.css";
 
@@ -9,7 +8,7 @@ const PricingPlans = () => {
         <div className="row justify-content-center">
           <div className="mb-4">
             <div className="section-heading text-center gotham-light">
-              <h6 className="responsive-text">Pricing Plans</h6>
+              <h6 className="responsive-text">Pricing Plans for creators</h6>
               <h3 className="responsive-text">Choose Your Perfect Plan</h3>
               <p className="responsive-text">
                 Select the plan that best fits your needs and start selling
@@ -25,14 +24,14 @@ const PricingPlans = () => {
             <div className="single_price_plan h-100">
               <div className="title">
                 <h3>Basic</h3>
-                <p>For Individual Shoppers</p>
+                <p>Test it out for free</p>
               </div>
               <div className="price">
                 <h4>Free</h4>
               </div>
               <div className="description">
                 <p>
-                  <i className="fas fa-check"></i> Basic Product Access
+                  <i className="fas fa-check"></i> Basic Platform Access
                 </p>
                 <p>
                   <i className="fas fa-check"></i> Standard Shipping
@@ -48,8 +47,8 @@ const PricingPlans = () => {
                 </p>
               </div>
               <div className="button">
-                <Link className="btn-main-pricing" to="/register">
-                  Get Started
+                <Link className="btn-main-pricing" to="/subscriptions">
+                  Learn More
                 </Link>
               </div>
             </div>
@@ -62,7 +61,7 @@ const PricingPlans = () => {
               <div className="title">
                 <span>Popular</span>
                 <h3>Premium</h3>
-                <p>For Regular Shoppers</p>
+                <p>For Real Creatives</p>
               </div>
               <div className="price">
                 <h4>$9.99</h4>
@@ -81,12 +80,12 @@ const PricingPlans = () => {
                   <i className="fas fa-check"></i> Exclusive Deals
                 </p>
                 <p>
-                  <i className="fas fa-times"></i> Premium Products
+                  <i className="fas fa-times"></i> Advanced Features
                 </p>
               </div>
               <div className="button">
-                <Link className="btn-main-pricing" to="/register">
-                  Get Started
+                <Link className="btn-main-pricing" to="/subscriptions">
+                  Learn More
                 </Link>
               </div>
             </div>
@@ -116,12 +115,12 @@ const PricingPlans = () => {
                   <i className="fas fa-check"></i> VIP Deals
                 </p>
                 <p>
-                  <i className="fas fa-check"></i> Premium Products
+                  <i className="fas fa-check"></i> Advanced Features
                 </p>
               </div>
               <div className="button">
-                <Link className="btn-main-pricing" to="/register">
-                  Get Started
+                <Link className="btn-main-pricing" to="/subscriptions">
+                  Learn More
                 </Link>
               </div>
             </div>

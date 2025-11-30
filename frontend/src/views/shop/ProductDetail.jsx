@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 
 import apiInstance from "../../utils/axios";
@@ -7,36 +7,32 @@ import GetCurrentAddress from "../plugin/UserCountry";
 import UserData from "../plugin/UserData";
 import CartID from "../plugin/cartID";
 import { addToCart } from "../plugin/addToCart";
-
 import { addToWishlist } from "../plugin/addToWishlist";
 import { CartContext } from "../plugin/Context";
 import moment from "moment";
 import Swal from "sweetalert2";
 
 function ProductDetail() {
-  const [product, setProduct] = useState([]);
+  const [product, setProduct] = useState(null);
   const [productImage, setProductImage] = useState("");
-  const [gallery, setgallery] = useState([]);
+  const [gallery, setGallery] = useState([]);
   const [specifications, setSpecifications] = useState([]);
   const [color, setColor] = useState([]);
   const [size, setSize] = useState([]);
-  const [vendor, setVendor] = useState([]);
-  const [vendorUser, setVendorUser] = useState(null);
+  const [vendor, setVendor] = useState(null);
 
   const [colorValue, setColorValue] = useState("No Color");
   const [sizeValue, setSizeValue] = useState("No Size");
   const [qtyValue, setQtyValue] = useState(1);
-  const { cartCount, updateCartCount } = useContext(CartContext);
+  const { updateCartCount } = useContext(CartContext);
 
-  let [isAddingToCart, setIsAddingToCart] = useState("Add To Cart");
-  let [loading, setLoading] = useState(true);
-  let [wishlistLoading, setWishlistLoading] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState("Add To Cart");
+  const [loading, setLoading] = useState(true);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   const [createReview, setCreateReview] = useState({
-    user_id: 0,
-    product_id: product?.id,
+    rating: "",
     review: "",
-    rating: 0,
   });
   const [reviews, setReviews] = useState([]);
 
@@ -45,154 +41,219 @@ function ProductDetail() {
   const addon = Addon();
   const currentAddress = GetCurrentAddress();
   const userData = UserData();
-  let cart_id = CartID();
+  const cart_id = CartID();
 
+  // Fetch product data
   useEffect(() => {
-    axios.get("products/" + params.slug).then((res) => {
-      setProduct(res.data);
-      setProductImage(res.data.image);
-      setgallery(res.data.gallery);
-      setSpecifications(res.data.specification);
-      setColor(res.data.color);
-      setSize(res.data.size);
-      setVendor(res.data.vendor);
-      setVendorUser(res.data.vendor.user);
-      if (product) {
-        setLoading(false);
-      }
-    });
-  }, [loading]);
+    let isMounted = true;
+    setLoading(true);
+    axios
+      .get("products/" + params.slug)
+      .then((res) => {
+        if (!isMounted) return;
+        setProduct(res.data);
+        setProductImage(res.data.image || "");
+        setGallery(res.data.gallery || []);
+        setSpecifications(res.data.specification || []);
+        setColor(res.data.color || []);
+        setSize(res.data.size || []);
+        setVendor(res.data.vendor || null);
+      })
+      .catch(() => {
+        // Handle error
+        setProduct(null);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.slug]);
 
-  // ================== Adding Product to Cart ==================== //
-
-  // Get color value after clicking on a button
+  // Handler for color selection
   const handleColorButtonClick = (event) => {
-    // Find the closest hidden input with class 'color_name' to the clicked button
-    const colorNameInput = event.target
-      .closest(".color_button")
-      .parentNode.querySelector(".color_name");
-    const colorImageInput = event.target
-      .closest(".color_button")
-      .parentNode.querySelector(".color_image");
+    // This function expects the dom structure, but let's make it more robust:
+    const btn = event.currentTarget;
+    const wrapper = btn.closest(".color_button_wrapper");
+    if (!wrapper) return;
+    const colorNameInput = wrapper.querySelector(".color_name");
+    const colorImageInput = wrapper.querySelector(".color_image");
 
-    if (colorNameInput) {
-      const colorName = colorNameInput.value;
-      const colorImage = colorImageInput.value;
-      setColorValue(colorName);
-      setProductImage(colorImage);
-    }
+    const colorName = colorNameInput ? colorNameInput.value : "";
+    const colorImage = colorImageInput ? colorImageInput.value : "";
+
+    setColorValue(colorName || "No Color");
+    setProductImage(colorImage || product?.image || "");
   };
 
+  // Handler for size selection
   const handleSizeButtonClick = (event) => {
-    // Find the closest hidden input with class 'color_name' to the clicked button
-    const sizeNameInput = event.target
-      .closest(".size_button")
-      .parentNode.querySelector(".size_name");
-
-    if (sizeNameInput) {
-      const sizeName = sizeNameInput.value;
-      setSizeValue(sizeName);
-    }
+    const btn = event.currentTarget;
+    const wrapper = btn.closest(".size_button_wrapper");
+    if (!wrapper) return;
+    const sizeNameInput = wrapper.querySelector(".size_name");
+    const sizeName = sizeNameInput ? sizeNameInput.value : "";
+    setSizeValue(sizeName || "No Size");
   };
 
+  // Handler for quantity change
   const handleQuantityChange = (event) => {
-    setQtyValue(event.target.value); // Update qtyValue with the new quantity value
+    const value = Math.max(1, Number(event.target.value) || 1);
+    setQtyValue(value);
   };
 
-  const handleAddToCart = async () => {
+  // Handler for adding to cart
+  const handleAddToCart = useCallback(async () => {
+    if (!product || !userData) return;
+    setIsAddingToCart("Processing...");
     try {
-      // Assuming addToCart is an async function
       await addToCart(
         product.id,
         userData?.user_id,
         qtyValue,
         product.price,
         product.shipping_amount,
-        currentAddress.country,
+        currentAddress?.country || "",
         sizeValue,
         colorValue,
         cart_id,
         setIsAddingToCart
       );
-
-      const url = userData?.user_id
+      const cartListUrl = userData?.user_id
         ? `cart-list/${cart_id}/${userData?.user_id}/`
         : `cart-list/${cart_id}/`;
-      const response = await axios.get(url);
-
-      updateCartCount(response.data.length);
-      console.log(response.data.length);
+      const response = await axios.get(cartListUrl);
+      updateCartCount(response.data?.length || 0);
       Swal.fire({
         icon: "success",
         title: "Added To Cart",
       });
+      setIsAddingToCart("Added To Cart");
     } catch (error) {
+      setIsAddingToCart("An Error Occured");
       console.error("Error adding to cart:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error Adding to Cart",
+        text: error?.message || "Could not add item to cart.",
+      });
+    } finally {
+      setTimeout(() => setIsAddingToCart("Add To Cart"), 1100);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    product,
+    userData,
+    qtyValue,
+    currentAddress,
+    sizeValue,
+    colorValue,
+    cart_id,
+    updateCartCount,
+    axios,
+  ]);
+
+  // Handler for adding to wishlist
+  const handleAddToWishlist = async () => {
+    if (!userData || !product) return;
+    setWishlistLoading(true);
+    try {
+      await addToWishlist(product.id, userData.user_id);
+      Swal.fire({
+        icon: "success",
+        title: "Added to Wishlist",
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error Adding to Wishlist",
+        text: error?.message || "Could not add item to wishlist.",
+      });
+    } finally {
+      setWishlistLoading(false);
     }
   };
 
-  const handleAddToWishlist = () => {
-    if (userData) {
-      addToWishlist(product.id, userData?.user_id);
-      setWishlistLoading(true);
-    }
-  };
-
+  // Handler for review change
   const handleReviewChange = (event) => {
-    setCreateReview({
-      ...createReview,
-      [event.target.name]: event.target.value,
-    });
+    const { name, value } = event.target;
+    setCreateReview((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const fetchReviewData = async () => {
-    if (product?.id) {
-      try {
-        const res = await axios.get(`reviews/${product.id}/`);
-        setReviews(res.data);
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
-      }
+  // Fetch reviews for this product
+  const fetchReviewData = useCallback(async () => {
+    if (!product?.id) return;
+    try {
+      const res = await axios.get(`reviews/${product.id}/`);
+      setReviews(res.data || []);
+    } catch (error) {
+      setReviews([]);
+      // Log error if needed
     }
-  };
-
-  useEffect(() => {
-    if (product?.id) {
-      fetchReviewData();
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id]);
 
-  const handleReviewSubmit = (e) => {
+  useEffect(() => {
+    fetchReviewData();
+  }, [fetchReviewData]);
+
+  // Handler for review submit
+  const handleReviewSubmit = async (e) => {
     e.preventDefault();
+    if (!userData || !product) {
+      Swal.fire({
+        icon: "warning",
+        title: "You must be logged in to submit a review",
+      });
+      return;
+    }
 
-    const formdata = new FormData();
+    if (!createReview.rating || !createReview.review.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Please fill out all fields",
+      });
+      return;
+    }
 
-    formdata.append("user_id", userData?.user_id);
-    formdata.append("product_id", product?.id);
-    formdata.append("rating", createReview.rating);
-    formdata.append("review", createReview.review);
+    const formData = new FormData();
+    formData.append("user_id", userData.user_id);
+    formData.append("product_id", product.id);
+    formData.append("rating", createReview.rating);
+    formData.append("review", createReview.review);
 
-    axios.post(`create-review/`, formdata).then(() => {
-      fetchReviewData();
+    try {
+      await axios.post(`create-review/`, formData);
+      await fetchReviewData();
       setCreateReview({ rating: "", review: "" });
       Swal.fire({
         icon: "success",
         title: "Review created successfully",
       });
-    });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Could not submit review",
+      });
+    }
   };
 
   return (
     <div>
       <main className="mb-4 mt-4">
-        {loading === false && (
+        {!loading && product && (
           <div className="container">
             {/* Section: Product details */}
             <section className="mb-9">
               <div className="row gx-lg-5">
                 <div className="col-md-6 mb-4 mb-md-0">
                   {/* Gallery */}
-                  <div className="">
+                  <div>
                     <div className="row gx-2 gx-lg-3">
                       <div className="col-12 col-lg-12">
                         <div className="lightbox">
@@ -204,7 +265,7 @@ function ProductDetail() {
                               objectFit: "cover",
                               borderRadius: 10,
                             }}
-                            alt={productImage}
+                            alt={product?.title || ""}
                             className="ecommerce-gallery-main-img active w-100 rounded-4 main-image-div"
                           />
                         </div>
@@ -221,7 +282,7 @@ function ProductDetail() {
                               objectFit: "cover",
                               borderRadius: "10px",
                             }}
-                            alt="Gallery image 1"
+                            alt="Gallery"
                             className="ecommerce-gallery-main-img active rounded-4"
                           />
                         </div>
@@ -239,98 +300,27 @@ function ProductDetail() {
                         className="mb-3 d-flex p-0"
                         style={{ listStyle: "none" }}
                       >
-                        {product.product_rating === null && (
-                          <li>
-                            <i className="fas fa-star fa-sm text-warning ps-0" />
-                          </li>
-                        )}
-                        {product.product_rating > 1 &&
-                          product.product_rating < 2 && (
-                            <li>
+                        {/* Star rendering can likely be simplified but preserve logic */}
+                        {[1, 2, 3, 4, 5].map((star) =>
+                          product.product_rating &&
+                          product.product_rating >= star ? (
+                            <li key={star}>
                               <i className="fas fa-star fa-sm text-warning ps-0" />
                             </li>
-                          )}
-                        {product.product_rating > 2 &&
-                          product.product_rating < 3 && (
-                            <>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                            </>
-                          )}
-
-                        {product.product_rating > 3 &&
-                          product.product_rating < 4 && (
-                            <>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                            </>
-                          )}
-
-                        {product.product_rating > 4 &&
-                          product.product_rating < 5 && (
-                            <>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                            </>
-                          )}
-
-                        {product.product_rating > 5 &&
-                          product.product_rating < 6 && (
-                            <>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                              <li>
-                                <i className="fas fa-star fa-sm text-warning ps-0" />
-                              </li>
-                            </>
-                          )}
-
+                          ) : null
+                        )}
                         <li style={{ marginLeft: 10, fontSize: 13 }}>
-                          <a
-                            href=""
-                            className="text-decoration-none align-middle"
-                          >
-                            {product.product_rating !== null && (
+                          <span className="text-decoration-none align-middle">
+                            {product.product_rating !== null &&
+                            product.product_rating !== undefined ? (
                               <>
                                 <strong className="me-2 text-dark">
-                                  {product?.product_rating.toFixed(1)}/5.0
+                                  {Number(product.product_rating).toFixed(1)}
+                                  /5.0
                                 </strong>
-                                ({product?.rating_count} reviews)
+                                ({product?.rating_count || 0} reviews)
                               </>
-                            )}
-
-                            {product.product_rating === null && (
+                            ) : (
                               <>
                                 <strong className="me-2 text-dark">
                                   Not Rated Yet
@@ -338,25 +328,29 @@ function ProductDetail() {
                                 (0 reviews)
                               </>
                             )}
-                          </a>
+                          </span>
                         </li>
                       </ul>
                     </div>
                     <h5 className="mb-3">
-                      <s className="text-muted me-2 small align-middle">
-                        {addon?.currency_sign}
-                        {product.old_price}
-                      </s>
+                      {product.old_price && (
+                        <s className="text-muted me-2 small align-middle">
+                          {addon?.currency_sign}
+                          {product.old_price}
+                        </s>
+                      )}
                       <span className="align-middle">
                         {addon?.currency_sign}
                         {product?.price}
-                      </span>{" "}
-                      <span
-                        className="align-middle text-muted"
-                        style={{ fontSize: "13px", fontStyle: "italic" }}
-                      >
-                        ({product.get_precentage}% OFF)
                       </span>
+                      {typeof product.get_precentage !== "undefined" && (
+                        <span
+                          className="align-middle text-muted"
+                          style={{ fontSize: "13px", fontStyle: "italic" }}
+                        >
+                          ({product.get_precentage}% OFF)
+                        </span>
+                      )}
                     </h5>
                     <p className="text-muted">
                       {product.description?.slice(0, 300)}
@@ -394,10 +388,8 @@ function ProductDetail() {
                             />
                           </div>
                         </div>
-
                         {/* Size */}
                         {size?.length > 0 ? (
-                          // Render something when the 'size' array has items
                           <div className="col-md-6 mb-4">
                             <div className="form-outline">
                               <label
@@ -409,13 +401,17 @@ function ProductDetail() {
                             </div>
                             <div className="d-flex">
                               {size?.map((s, index) => (
-                                <div key={index} className="me-2">
+                                <div
+                                  key={index}
+                                  className="me-2 size_button_wrapper"
+                                >
                                   <input
                                     type="hidden"
                                     className="size_name"
-                                    value={s.name}
+                                    value={s.name || ""}
                                   />
                                   <button
+                                    type="button"
                                     onClick={handleSizeButtonClick}
                                     className="btn btn-secondary size_button"
                                   >
@@ -426,39 +422,45 @@ function ProductDetail() {
                             </div>
                           </div>
                         ) : (
-                          // Render empty div
                           <div></div>
                         )}
-
                         {/* Colors */}
                         {color?.length > 0 ? (
                           <div className="col-md-6 mb-4">
                             <div className="form-outline">
                               <label
                                 className="form-label"
-                                htmlFor="typeNumber"
+                                htmlFor="colorOptions"
                               >
                                 <b>Color:</b> <span>{colorValue}</span>
                               </label>
                             </div>
                             <div className="d-flex">
                               {color?.map((c, index) => (
-                                <div key={index}>
+                                <div
+                                  key={index}
+                                  className="color_button_wrapper"
+                                >
                                   <input
                                     type="hidden"
                                     className="color_name"
-                                    value={c.name}
+                                    value={c.name || ""}
                                   />
                                   <input
                                     type="hidden"
                                     className="color_image"
-                                    value={c.image}
+                                    value={c.image || ""}
                                   />
                                   <button
+                                    type="button"
                                     className="btn p-3 me-2 color_button"
                                     onClick={handleColorButtonClick}
                                     style={{
-                                      backgroundColor: `${c.color_code}`,
+                                      backgroundColor: c.color_code || "#000",
+                                      border:
+                                        colorValue === c.name
+                                          ? "2px solid #555"
+                                          : "",
                                     }}
                                   ></button>
                                 </div>
@@ -467,53 +469,38 @@ function ProductDetail() {
                             <hr />
                           </div>
                         ) : (
-                          // Render empty div
                           <div></div>
                         )}
                       </div>
                       <button
                         onClick={handleAddToCart}
                         type="button"
-                        className="btn-main-pricing"
+                        className="btn-main-pricing me-1 mb-1 p-0"
+                        disabled={isAddingToCart === "Processing..."}
                       >
                         {isAddingToCart === "Add To Cart" && (
                           <i className="fas fa-cart-plus me-2" />
                         )}
-
                         {isAddingToCart === "Processing..." && (
                           <i className="fas fa-spinner fa-spin me-2" />
                         )}
-
                         {isAddingToCart === "Added To Cart" && (
                           <i className="fas fa-check-circle me-2" />
                         )}
-
                         {isAddingToCart === "An Error Occured" && (
                           <i className="fas fa-check-circle me-2" />
                         )}
-
                         {isAddingToCart}
                       </button>
-                      {wishlistLoading === true && (
-                        <button
-                          onClick={handleAddToWishlist}
-                          className="btn"
-                          data-mdb-toggle="tooltip"
-                          title="Add to wishlist"
-                        >
-                          <i className="fas fa-heart" />
-                        </button>
-                      )}
-                      {wishlistLoading === false && (
-                        <button
-                          onClick={handleAddToWishlist}
-                          className="btn"
-                          data-mdb-toggle="tooltip"
-                          title="Add to wishlist"
-                        >
-                          <i className="fas fa-heart" />
-                        </button>
-                      )}
+                      <button
+                        onClick={handleAddToWishlist}
+                        className="btn"
+                        data-mdb-toggle="tooltip"
+                        title="Add to wishlist"
+                        disabled={wishlistLoading}
+                      >
+                        <i className="fas fa-heart" />
+                      </button>
                     </div>
                   </div>
                   {/* Details */}
@@ -529,7 +516,7 @@ function ProductDetail() {
             >
               <li className="nav-item" role="presentation">
                 <button
-                  className="btn-main-pricing"
+                  className="btn-main-pricing color_button_new"
                   id="pills-home-tab"
                   data-bs-toggle="pill"
                   data-bs-target="#pills-home"
@@ -543,7 +530,7 @@ function ProductDetail() {
               </li>
               <li className="nav-item" role="presentation">
                 <button
-                  className="btn-main-pricing"
+                  className="btn-main-pricing color_button_new"
                   id="pills-profile-tab"
                   data-bs-toggle="pill"
                   data-bs-target="#pills-profile"
@@ -557,7 +544,7 @@ function ProductDetail() {
               </li>
               <li className="nav-item" role="presentation">
                 <button
-                  className="btn-main-pricing"
+                  className="btn-main-pricing color_button_new"
                   id="pills-contact-tab"
                   data-bs-toggle="pill"
                   data-bs-target="#pills-contact"
@@ -632,28 +619,6 @@ function ProductDetail() {
                       <div className="card-body">
                         <h5 className="card-title">{vendor?.name}</h5>
                         <p className="card-text">{vendor?.description}</p>
-                        {/* <div className="d-flex mb-2">
-                                                    <ul className="list-inline m-0">
-                                                        <li className="list-inline-item">
-                                                            <i className="fas fa-star text-primary" />
-                                                        </li>
-                                                        <li className="list-inline-item">
-                                                            <i className="fas fa-star text-primary" />
-                                                        </li>
-                                                        <li className="list-inline-item">
-                                                            <i className="fas fa-star text-primary" />
-                                                        </li>
-                                                        <li className="list-inline-item">
-                                                            <i className="fas fa-star text-primary" />
-                                                        </li>
-                                                        <li className="list-inline-item">
-                                                            <i className="fas fa-star-half-alt text-primary" />
-                                                        </li>
-                                                    </ul>
-                                                    <span className="ms-2">4.5</span>
-                                                </div> */}
-                        {/* <button className="btn btn-primary me-2">Follow</button>
-                                                <button className="btn btn-secondary">Send Message</button> */}
                       </div>
                     </div>
                   </div>
@@ -673,15 +638,17 @@ function ProductDetail() {
                       <h2>Create a New Review</h2>
                       <form method="POST" onSubmit={handleReviewSubmit}>
                         <div className="mb-3">
-                          <label htmlFor="username" className="form-label">
+                          <label htmlFor="rating" className="form-label">
                             Rating
                           </label>
                           <select
                             onChange={handleReviewChange}
                             name="rating"
                             className="form-select"
-                            id=""
+                            id="rating"
+                            value={createReview.rating}
                           >
+                            <option value="">Select Rating</option>
                             <option value="1">★</option>
                             <option value="2">★★</option>
                             <option value="3">★★★</option>
@@ -699,10 +666,15 @@ function ProductDetail() {
                             placeholder="Write your review"
                             onChange={handleReviewChange}
                             name="review"
+                            id="reviewText"
                             value={createReview.review}
                           />
                         </div>
-                        <button type="submit" className="btn-main-pricing">
+                        <button
+                          type="submit"
+                          className="btn-main-pricing"
+                          disabled={loading}
+                        >
                           Submit Review
                         </button>
                       </form>
@@ -720,15 +692,15 @@ function ProductDetail() {
                               <div className="row g-0">
                                 <div className="col-md-3">
                                   <img
-                                    src={review.profile.image}
-                                    alt="User Image"
+                                    src={review.profile?.image}
+                                    alt="User"
                                     className="img-fluid"
                                   />
                                 </div>
                                 <div className="col-md-9">
                                   <div className="card-body">
                                     <h5 className="card-title">
-                                      {review.profile.full_name}
+                                      {review.profile?.full_name}
                                     </h5>
                                     <p className="card-text">
                                       {moment(review.date).format("MM/DD/YYYY")}
@@ -743,100 +715,18 @@ function ProductDetail() {
                       ) : (
                         <h2>No Reviews Yet</h2>
                       )}
-
-                      {/* More reviews can be added here */}
                     </div>
                   </div>
                 </div>
               </div>
-              <div
-                className="tab-pane fade"
-                id="pills-disabled"
-                role="tabpanel"
-                aria-labelledby="pills-disabled-tab"
-                tabIndex={0}
-              >
-                <div className="container mt-5">
-                  <div className="row">
-                    {/* Column 1: Form to submit new questions */}
-                    <div className="col-md-6">
-                      <h2>Ask a Question</h2>
-                      <form>
-                        <div className="mb-3">
-                          <label htmlFor="askerName" className="form-label">
-                            Your Name
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="askerName"
-                            placeholder="Enter your name"
-                          />
-                        </div>
-                        <div className="mb-3">
-                          <label htmlFor="questionText" className="form-label">
-                            Question
-                          </label>
-                          <textarea
-                            className="form-control"
-                            id="questionText"
-                            rows={4}
-                            placeholder="Ask your question"
-                            defaultValue={""}
-                          />
-                        </div>
-                        <button type="submit" className="btn btn-primary">
-                          Submit Question
-                        </button>
-                      </form>
-                    </div>
-                    {/* Column 2: Display existing questions and answers */}
-                    <div className="col-md-6">
-                      <h2>Questions and Answers</h2>
-                      <div className="card mb-3">
-                        <div className="card-body">
-                          <h5 className="card-title">User 1</h5>
-                          <p className="card-text">August 10, 2023</p>
-                          <p className="card-text">
-                            What are the available payment methods?
-                          </p>
-                          <h6 className="card-subtitle mb-2 text-muted">
-                            Answer:
-                          </h6>
-                          <p className="card-text">
-                            We accept credit/debit cards and PayPal as payment
-                            methods.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="card mb-3">
-                        <div className="card-body">
-                          <h5 className="card-title">User 2</h5>
-                          <p className="card-text">August 15, 2023</p>
-                          <p className="card-text">
-                            How long does shipping take?
-                          </p>
-                          <h6 className="card-subtitle mb-2 text-muted">
-                            Answer:
-                          </h6>
-                          <p className="card-text">
-                            Shipping usually takes 3-5 business days within the
-                            US.
-                          </p>
-                        </div>
-                      </div>
-                      {/* More questions and answers can be added here */}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Hide unused Q&A panel, if needed it can be included */}
             </div>
           </div>
         )}
 
-        {loading === true && (
+        {loading && (
           <div className="container text-center">
-            <img className="" src="/assets/images/loading.gif" alt="" />
+            <img src="/assets/images/loading.gif" alt="Loading..." />
           </div>
         )}
       </main>

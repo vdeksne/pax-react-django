@@ -5,7 +5,7 @@ from customer import views as customer_views
 from vendor import views as vendor_views
 
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import RegisterView
+from .views import RegisterView, GeocodeReverseView
 
 
 urlpatterns = [
@@ -15,6 +15,7 @@ urlpatterns = [
     path('user/token/', userauths_views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('user/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('user/register/', userauths_views.RegisterView.as_view(), name='auth_register'),
+    path('user/google-auth/', userauths_views.GoogleAuthView.as_view(), name='google_auth'),
     path('user/profile/<user_id>/', userauths_views.ProfileView.as_view(), name='user_profile'),
     path('user/test/', userauths_views.testEndPoint, name='auth_register'),
     path('user/password-reset/<email>/', userauths_views.PasswordEmailVerify.as_view(), name='password_reset'),
@@ -41,6 +42,7 @@ urlpatterns = [
     path('cart-delete-all/<str:cart_id>/', store_views.CartClearView.as_view(), name='cart-delete-all'),
     path('cart-delete-all/<str:cart_id>/<int:user_id>/', store_views.CartClearView.as_view(), name='cart-delete-all'),
     path('create-order/', store_views.CreateOrderView.as_view(), name='cart-delete'),
+    path('create-subscription-order/', store_views.CreateSubscriptionOrderView.as_view(), name='create-subscription-order'),
     path('checkout/<order_oid>/', store_views.CheckoutView.as_view(), name='checkout'),
     path('coupon/', store_views.CouponApiView.as_view(), name='coupon'),
     path('create-review/', store_views.ReviewRatingAPIView.as_view(), name='create-review'),
@@ -95,4 +97,7 @@ urlpatterns = [
 
     # New registration endpoint
     path('api/v1/register/', RegisterView.as_view(), name='register'),
+
+    # Geocoding endpoint (proxy for Nominatim API to avoid CORS)
+    path('geocode/reverse/', GeocodeReverseView.as_view(), name='geocode-reverse'),
 ]

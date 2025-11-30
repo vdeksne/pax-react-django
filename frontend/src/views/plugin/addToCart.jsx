@@ -29,7 +29,6 @@ export const addToCart = async (
     if (!price || price <= 0) throw new Error("Price must be greater than 0");
     if (!shipping_amount || shipping_amount < 0)
       throw new Error("Shipping amount must be non-negative");
-    if (!current_address) throw new Error("Country is required");
     if (!cart_id) throw new Error("Cart ID is required");
 
     // Create form data
@@ -43,7 +42,15 @@ export const addToCart = async (
     formData.append("qty", qty.toString());
     formData.append("price", price.toString());
     formData.append("shipping_amount", shipping_amount.toString());
-    formData.append("country", current_address);
+
+    // Handle country - use provided country or default to empty string
+    // If current_address is an object with country property, use that; otherwise use current_address as string
+    const country =
+      typeof current_address === "object" &&
+      current_address?.country !== undefined
+        ? current_address.country
+        : current_address || "";
+    formData.append("country", country);
     formData.append("size", size || "No Size");
     formData.append("color", color || "No Color");
     formData.append("cart_id", cart_id);

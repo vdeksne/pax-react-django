@@ -178,29 +178,45 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # AWS Configs
-AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+try:
+    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+except:
+    AWS_ACCESS_KEY_ID = ""
 
-AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+try:
+    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+except:
+    AWS_SECRET_ACCESS_KEY = ""
 
-AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+try:
+    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+except:
+    AWS_STORAGE_BUCKET_NAME = ""
 
-AWS_S3_FILE_OVERWRITE = False
+# Only use S3 if valid credentials are provided (not placeholders)
+USE_S3 = (
+    AWS_ACCESS_KEY_ID 
+    and AWS_SECRET_ACCESS_KEY 
+    and AWS_STORAGE_BUCKET_NAME
+    and AWS_ACCESS_KEY_ID != "placeholder"
+    and AWS_SECRET_ACCESS_KEY != "placeholder"
+    and AWS_STORAGE_BUCKET_NAME != "placeholder"
+)
 
-AWS_DEFAULT_ACL = 'public-read'
-
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
-
-AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-
-AWS_LOCATION = 'static'
-
-STATIC_LOCATION = 'static'
-
-STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
+if USE_S3:
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = 'public-read'
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_LOCATION = 'static'
+    STATIC_LOCATION = 'static'
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
+else:
+    # Use local file storage for development
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    STATIC_URL = 'static/'
 
 
 # Default primary key field type
@@ -276,12 +292,12 @@ SIMPLE_JWT = {
 JAZZMIN_SETTINGS = {
     "site_title": "Pax",
     "site_header": "Pax",
-    "site_brand": "Modern Marketplace ",
+    "site_brand": "Pax",
     "site_icon": "images/favicon.ico",
-    "site_logo": "images/logos/logo.jpg",
+    "site_logo": None,  # Logo removed - upload to S3 static/images/logos/logo.jpg if needed
     "welcome_sign": "Welcome To Pax",
     "copyright": "All right reserved to Pax",
-    "user_avatar": "images/photos/logo.jpg",
+    "user_avatar": None,  # Avatar removed - upload to S3 static/images/photos/logo.jpg if needed
     "topmenu_links": [
         {"name": "Dashboard", "url": "home",
             "permissions": ["auth.view_user"]},

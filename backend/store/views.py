@@ -550,6 +550,81 @@ class CreateOrderView(generics.CreateAPIView):
         return Response( {"message": "Order Created Successfully", 'order_oid':order.oid}, status=status.HTTP_201_CREATED)
 
 
+class CreateSubscriptionOrderView(generics.CreateAPIView):
+    """
+    Create a subscription order without requiring cart items.
+    This endpoint creates an order directly for subscription plans.
+    """
+    permission_classes = (AllowAny,)
+    
+    def create(self, request, *args, **kwargs):
+        payload = request.data
+        
+        # Get subscription plan details
+        plan_name = payload.get('plan_name', '')
+        plan_price = Decimal(payload.get('plan_price', 0))
+        
+        # Subscription plan prices
+        plan_prices = {
+            'basic': Decimal('0.00'),
+            'premium': Decimal('9.99'),
+            'enterprise': Decimal('49.99')
+        }
+        
+        # Use provided price or get from plan name
+        if plan_price == 0 and plan_name.lower() in plan_prices:
+            plan_price = plan_prices[plan_name.lower()]
+        
+        # Get user information (optional - can be filled later in checkout)
+        full_name = payload.get('full_name', '')
+        email = payload.get('email', '')
+        mobile = payload.get('mobile', '')
+        address = payload.get('address', '')
+        city = payload.get('city', '')
+        state = payload.get('state', '')
+        country = payload.get('country', '')
+        user_id = payload.get('user_id', 0)
+        
+        if user_id != 0:
+            user = User.objects.filter(id=user_id).first()
+        else:
+            user = None
+        
+        # Calculate totals for subscription
+        sub_total = plan_price
+        shipping_amount = Decimal('0.00')  # Subscriptions typically don't have shipping
+        tax_fee = Decimal('0.00')  # Can be calculated later if needed
+        service_fee = Decimal('0.00')  # Can be calculated later if needed
+        total = sub_total + shipping_amount + tax_fee + service_fee
+        
+        with transaction.atomic():
+            # Create the subscription order
+            order = CartOrder.objects.create(
+                buyer=user,
+                payment_status="processing",
+                full_name=full_name,
+                email=email,
+                mobile=mobile,
+                address=address,
+                city=city,
+                state=state,
+                country=country,
+                sub_total=sub_total,
+                shipping_amount=shipping_amount,
+                tax_fee=tax_fee,
+                service_fee=service_fee,
+                total=total,
+                initial_total=total,
+            )
+            
+            # Store subscription plan info in order (we can add a note field or use existing fields)
+            # For now, we'll store it in the address field as a note, or we could add a subscription_plan field to the model
+            # But to keep it simple, we'll just create the order and the plan info can be stored separately if needed
+        
+        return Response({
+            "message": "Subscription Order Created Successfully",
+            'order_oid': order.oid
+        }, status=status.HTTP_201_CREATED)
 
 
 class CheckoutView(generics.RetrieveAPIView):
@@ -560,6 +635,19 @@ class CheckoutView(generics.RetrieveAPIView):
         order_oid = self.kwargs['order_oid']
         cart = get_object_or_404(CartOrder, oid=order_oid)
         return cart
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        
+        # Check if this is a subscription order (no order items)
+        from store.models import CartOrderItem
+        order_items_count = CartOrderItem.objects.filter(order=instance).count()
+        is_subscription = order_items_count == 0
+        
+        data = serializer.data
+        data['is_subscription'] = is_subscription
+        return Response(data)
     
 
 class CouponApiView(generics.CreateAPIView):
@@ -619,28 +707,38 @@ class StripeCheckoutView(generics.CreateAPIView):
 
 
         try:
-            checkout_session = stripe.checkout.Session.create(
-                customer_email=order.email,
-                payment_method_types=['card'],
-                line_items=[
+            # Get email from order or user
+            customer_email = None
+            if order.email and order.email.strip():
+                customer_email = order.email.strip()
+            elif order.buyer and order.buyer.email:
+                customer_email = order.buyer.email
+            
+            # Build checkout session parameters
+            session_params = {
+                'payment_method_types': ['card'],
+                'line_items': [
                     {
                         'price_data': {
                             'currency': 'usd',
                             'product_data': {
-                                'name': order.full_name,
+                                'name': order.full_name or 'Order',
                             },
                             'unit_amount': int(order.total * 100),
                         },
                         'quantity': 1,
                     }
                 ],
-                mode='payment',
-                # success_url = f"{settings.SITE_URL}/payment-success/{{order.oid}}/?session_id={{CHECKOUT_SESSION_ID}}",
-                # cancel_url = f"{settings.SITE_URL}/payment-success/{{order.oid}}/?session_id={{CHECKOUT_SESSION_ID}}",
-
-                success_url=settings.SITE_URL+'/payment-success/'+ order.oid +'?session_id={CHECKOUT_SESSION_ID}',
-                cancel_url=settings.SITE_URL+'/?session_id={CHECKOUT_SESSION_ID}',
-            )
+                'mode': 'payment',
+                'success_url': settings.SITE_URL+'/payment-success/'+ order.oid +'?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url': settings.SITE_URL+'/?session_id={CHECKOUT_SESSION_ID}',
+            }
+            
+            # Only include customer_email if we have a valid email
+            if customer_email:
+                session_params['customer_email'] = customer_email
+            
+            checkout_session = stripe.checkout.Session.create(**session_params)
             order.stripe_session_id = checkout_session.id 
             order.save()
 

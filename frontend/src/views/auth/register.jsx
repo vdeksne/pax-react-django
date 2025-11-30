@@ -1,8 +1,9 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import apiInstance from "../../utils/axios";
 import UserData from "../plugin/UserData";
 import { CartContext } from "../plugin/Context";
+import { setAuthUser } from "../../utils/auth";
 import Swal from "sweetalert2";
 
 function Register() {
@@ -16,10 +17,12 @@ function Register() {
     user_type: "customer", // Default to customer
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const axios = apiInstance;
   const { updateCartCount } = useContext(CartContext);
   const userData = UserData();
+  const googleButtonRef = useRef(null);
 
   const handleChange = (e) => {
     setFormData({
@@ -27,6 +30,77 @@ function Register() {
       [e.target.name]: e.target.value,
     });
   };
+
+  const handleGoogleSignIn = async (response) => {
+    setGoogleLoading(true);
+    try {
+      const backendResponse = await axios.post("user/google-auth/", {
+        token: response.credential,
+      });
+
+      if (backendResponse.data && backendResponse.data.access) {
+        // Store tokens using the same auth system as regular registration
+        setAuthUser(backendResponse.data.access, backendResponse.data.refresh);
+
+        Swal.fire({
+          icon: "success",
+          title: backendResponse.data.message || "Registration Successful",
+          text: "Welcome! You have been registered and logged in.",
+        }).then(() => {
+          // Update cart count if needed
+          if (updateCartCount) {
+            updateCartCount();
+          }
+          navigate("/");
+        });
+      }
+    } catch (error) {
+      console.error("Google authentication error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Authentication Failed",
+        text:
+          error.response?.data?.error ||
+          "Failed to authenticate with Google. Please try again.",
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Wait for Google script to load
+    const initGoogleSignIn = () => {
+      if (window.google && window.google.accounts && googleButtonRef.current) {
+        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+        if (!clientId) {
+          console.warn(
+            "Google Client ID not found. Please set VITE_GOOGLE_CLIENT_ID in your .env file"
+          );
+          return;
+        }
+
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleSignIn,
+        });
+
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          theme: "outline",
+          size: "large",
+          width: "100%",
+          text: "signup_with",
+        });
+      } else {
+        // Retry after a short delay if Google script hasn't loaded yet
+        setTimeout(initGoogleSignIn, 100);
+      }
+    };
+
+    // Start initialization
+    initGoogleSignIn();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,6 +157,26 @@ function Register() {
           <div className="card">
             <div className="card-body">
               <h2 className="text-center mb-4">Register</h2>
+
+              {/* Google Sign-In Button */}
+              <div className="mb-4">
+                <div ref={googleButtonRef} className="w-100"></div>
+                {googleLoading && (
+                  <div className="text-center mt-2">
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
+                    Authenticating...
+                  </div>
+                )}
+              </div>
+
+              <div className="text-center mb-3">
+                <span className="text-muted">OR</span>
+              </div>
+
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label htmlFor="username" className="form-label">

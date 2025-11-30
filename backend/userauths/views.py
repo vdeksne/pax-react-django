@@ -11,6 +11,7 @@ from django.utils.encoding import force_bytes
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -20,6 +21,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 # Others
 import json
 import random
+import requests
 
 # Serializers
 from userauths.serializer import MyTokenObtainPairSerializer, ProfileSerializer, RegisterSerializer, UserSerializer
@@ -42,6 +44,116 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = (AllowAny,)
     # It sets the serializer class to be used with this view.
     serializer_class = RegisterSerializer
+
+
+class GoogleAuthView(APIView):
+    """
+    Handle Google OAuth authentication.
+    Verifies the Google ID token and creates/authenticates the user.
+    """
+    permission_classes = (AllowAny,)
+    
+    def post(self, request):
+        try:
+            token = request.data.get('token')
+            if not token:
+                return Response(
+                    {'error': 'Google token is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Verify the token with Google
+            google_response = requests.get(
+                f'https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={token}'
+            )
+            
+            if google_response.status_code != 200:
+                return Response(
+                    {'error': 'Invalid Google token'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            google_data = google_response.json()
+            email = google_data.get('email')
+            name = google_data.get('name', '')
+            picture = google_data.get('picture', '')
+            
+            if not email:
+                return Response(
+                    {'error': 'Email not provided by Google'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Check if user exists
+            try:
+                user = User.objects.get(email=email)
+                # User exists, generate tokens
+                refresh = RefreshToken.for_user(user)
+                access_token = str(refresh.access_token)
+                refresh_token = str(refresh)
+                
+                # Update profile picture if available
+                if picture and hasattr(user, 'profile'):
+                    user.profile.image = picture
+                    user.profile.save()
+                
+                return Response({
+                    'message': 'Login successful',
+                    'access': access_token,
+                    'refresh': refresh_token,
+                    'user': {
+                        'id': user.id,
+                        'email': user.email,
+                        'full_name': user.full_name,
+                        'username': user.username,
+                    }
+                }, status=status.HTTP_200_OK)
+                
+            except User.DoesNotExist:
+                # Create new user
+                email_username = email.split('@')[0]
+                
+                # Generate a random phone number placeholder (Google doesn't provide phone)
+                phone = f"+1{random.randint(1000000000, 9999999999)}"
+                
+                user = User.objects.create(
+                    email=email,
+                    username=email_username,
+                    full_name=name or email_username,
+                    phone=phone
+                )
+                
+                # Set unusable password for OAuth users (they won't use password login)
+                user.set_unusable_password()
+                user.save()
+                
+                # Update profile picture if available
+                if picture and hasattr(user, 'profile'):
+                    user.profile.image = picture
+                    user.profile.save()
+                
+                # Generate tokens
+                refresh = RefreshToken.for_user(user)
+                access_token = str(refresh.access_token)
+                refresh_token = str(refresh)
+                
+                return Response({
+                    'message': 'Registration successful',
+                    'access': access_token,
+                    'refresh': refresh_token,
+                    'user': {
+                        'id': user.id,
+                        'email': user.email,
+                        'full_name': user.full_name,
+                        'username': user.username,
+                    }
+                }, status=status.HTTP_201_CREATED)
+                
+        except Exception as e:
+            return Response(
+                {'error': f'Authentication failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 

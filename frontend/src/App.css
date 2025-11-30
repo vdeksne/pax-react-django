@@ -272,7 +272,7 @@
   font-size: 1rem;
   line-height: 1.2;
 }
-.btn:hover {
+.btn:hover:not(.color_button):not(.color-button):not(.size_button) {
   background-color: #ffffff !important;
   color: #000000 !important;
   border: 1px solid #ffffff !important;
@@ -368,6 +368,7 @@ button {
   background: #c28f00;
 
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -498,13 +499,13 @@ button {
   align-items: flex-start;
 }
 
-.btn:hover {
+.btn:hover:not(.color_button):not(.color-button):not(.size_button) {
   background-color: #ffffff !important;
   color: #000000 !important;
   border: 1px solid #ffffff !important;
 }
 
-.btn:active {
+.btn:active:not(.color_button):not(.color-button):not(.size_button) {
   background-color: #ffffff !important;
   color: #000000 !important;
   border: 1px solid #ffffff !important;
@@ -517,7 +518,7 @@ div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm {
   color: #000000;
   font-size: 1em;
 }
-button:focus {
+button:focus:not(.color_button):not(.color-button):not(.size_button) {
   background-color: transparent !important;
   color: #000000 !important;
   border: 1px solid #ffffff !important;
@@ -534,12 +535,565 @@ button:focus {
   border: none;
 }
 
-.btn:hover {
+.btn:hover:not(.color_button):not(.color-button):not(.size_button) {
   background-color: #ffffff !important;
   color: #000000 !important;
   border: 1px solid #ffffff !important;
 }
-button:hover {
+
+/* Color button specific styles - override global btn hover */
+.color_button,
+.color-button {
+  transition: transform 0.2s ease !important;
+  border: 2px solid transparent !important;
+  cursor: pointer;
+  color: #000000 !important;
+}
+
+/* Color buttons maintain their inline background color on hover */
+/* Use very specific selectors to override all button hover rules */
+button.btn.color_button:hover,
+.btn.color_button:hover,
+button.color_button:hover,
+.color_button:hover,
+button.btn.color-button:hover,
+.btn.color-button:hover,
+button.color-button:hover,
+.color-button:hover {
+  /* Use CSS variable set from inline style to preserve background color */
+  background-color: var(--color-button-bg, currentColor) !important;
+  opacity: 1 !important;
+  transform: scale(1.15) !important;
+  transition: transform 0.2s ease !important;
+  color: #000000 !important;
+}
+
+/* Color buttons maintain their inline background color on focus */
+button.btn.color_button:focus,
+.btn.color_button:focus,
+button.color_button:focus,
+.color_button:focus,
+button.btn.color-button:focus,
+.btn.color-button:focus,
+button.color-button:focus,
+.color-button:focus {
+  /* Use CSS variable set from inline style to preserve background color */
+  background-color: var(--color-button-bg, currentColor) !important;
+  box-shadow: none !important;
+}
+
+/** 
+ * color_button_new - variant of color_button that is visually distinct and accessible 
+ */
+
+/* Base styles for new color button */
+.color_button_new {
+  transition: transform 0.2s ease !important;
+  /* border: 2px solid #222222 !important; dark contrasting border */
+  cursor: pointer;
+  color: #111111 !important;
+  /* width: 2.25rem !important;
+  height: 2.25rem !important; */
+  min-width: 2.25rem !important;
+  min-height: 2.25rem !important;
+  /* border-radius: 50% !important; */
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  outline: none !important;
+  position: relative;
+  background: var(--color-button-bg, #eee) !important;
+}
+
+/* Visually indicate when selected/active */
+.color_button_new.active,
+.color_button_new.selected,
+.color_button_new[aria-checked="true"] {
+  border-color: #c28f00 !important;
+  box-shadow: 0 0 0 3px rgba(194, 143, 0, 0.25);
+}
+
+/* Hover/focus interaction (ensure background remains the inline set color) */
+.color_button_new:hover,
+.color_button_new:focus {
+  background-color: var(--color-button-bg, #eee) !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 0 0 3px #000000;
+  border-color: #000000 !important;
+  z-index: 2;
+  color: #111111 !important;
+  outline: 1px solid #000000 !important;
+}
+
+/* Keyboard accessibility: always visible focus ring on focus-visible */
+.color_button_new:focus-visible {
+  outline: 2px solid #c28f00 !important;
+  outline-offset: 2px !important;
+  border-color: #c28f00 !important;
+  box-shadow: 0 0 0 4px #c28f001f;
+}
+
+/* Optional: show a checkmark in the middle when selected */
+.color_button_new.selected::after,
+.color_button_new.active::after,
+.color_button_new[aria-checked="true"]::after {
+  content: "";
+  display: block;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+/* Ensure no shadow or ring leaks from other color buttons */
+.color_button_new:not(.active):not(.selected):not([aria-checked="true"]) {
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.08);
+  border-color: #222 !important;
+}
+
+/* Make sure .color_button_new text is always readable */
+.color_button_new {
+  font-size: 1rem !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.12);
+}
+
+/* ============================================
+   SUBSCRIPTIONS PAGE STYLES
+   Modern, Minimalistic, Black & White Design
+   ============================================ */
+
+.subscriptions-page {
+  background-color: #ffffff;
+  min-height: 100vh;
+  padding: 4rem 0;
+}
+
+.subscriptions-title {
+  font-size: 3.5rem;
+  font-weight: 300;
+  color: #000000;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.subscriptions-subtitle {
+  font-size: 1.25rem;
+  color: #666666;
+  font-weight: 300;
+  letter-spacing: 0.01em;
+}
+
+/* Subscription Cards */
+.subscription-card {
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 0;
+  padding: 3rem 2.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.subscription-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  border-color: #000000;
+}
+
+.subscription-card-popular {
+  border-width: 3px;
+  background: #000000;
+  color: #ffffff;
+}
+
+.subscription-card-popular .subscription-name,
+.subscription-card-popular .subscription-tagline,
+.subscription-card-popular .subscription-description,
+.subscription-card-popular .feature-title,
+.subscription-card-popular .feature-description {
+  color: #ffffff;
+}
+
+.subscription-card-popular .subscription-price .price-amount {
+  color: #ffffff;
+}
+
+.subscription-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000000;
+  color: #ffffff;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.subscription-card-popular .subscription-badge {
+  background: #ffffff;
+  color: #000000;
+}
+
+.subscription-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.subscription-name {
+  font-size: 2rem;
+  font-weight: 300;
+  color: #000000;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.subscription-tagline {
+  font-size: 0.9rem;
+  color: #666666;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 0;
+}
+
+.subscription-price {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.subscription-card-popular .subscription-price {
+  border-bottom-color: #333333;
+}
+
+.price-amount {
+  font-size: 3.5rem;
+  font-weight: 200;
+  color: #000000;
+  line-height: 1;
+  display: block;
+}
+
+.price-period {
+  font-size: 1rem;
+  color: #666666;
+  font-weight: 300;
+  margin-left: 0.25rem;
+}
+
+.subscription-description {
+  font-size: 1rem;
+  color: #666666;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  text-align: center;
+  font-weight: 300;
+}
+
+/* Features */
+.subscription-features {
+  flex: 1;
+  margin-bottom: 2rem;
+}
+
+.feature-item {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.subscription-card-popular .feature-item {
+  border-bottom-color: #333333;
+}
+
+.feature-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.feature-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+
+.feature-included .feature-icon {
+  color: #000000;
+}
+
+.subscription-card-popular .feature-included .feature-icon {
+  color: #ffffff;
+}
+
+.feature-excluded .feature-icon {
+  color: #999999;
+}
+
+.feature-content {
+  flex: 1;
+}
+
+.feature-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.feature-description {
+  font-size: 0.9rem;
+  color: #666666;
+  line-height: 1.5;
+  font-weight: 300;
+  margin: 0;
+}
+
+.subscription-card-popular .feature-description {
+  color: #cccccc;
+}
+
+/* CTA Button */
+.subscription-cta {
+  margin-top: auto;
+}
+
+.subscription-button {
+  display: block;
+  width: 100%;
+  padding: 1rem 2rem;
+  background: #000000;
+  color: #ffffff;
+  text-align: center;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 2px solid #000000;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.subscription-button:hover:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.subscription-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.subscription-card-popular .subscription-button {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+.subscription-card-popular .subscription-button:hover:not(:disabled) {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}
+
+/* Comparison Table */
+.subscription-comparison {
+  margin-top: 6rem;
+  padding: 4rem 0;
+  border-top: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+}
+
+.comparison-title {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: #000000;
+  letter-spacing: -0.02em;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2rem;
+}
+
+.comparison-table thead {
+  background: #000000;
+  color: #ffffff;
+}
+
+.comparison-table th {
+  padding: 1.25rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-right: 1px solid #333333;
+}
+
+.comparison-table th:last-child {
+  border-right: none;
+}
+
+.comparison-table tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+}
+
+.comparison-table tbody tr:hover {
+  background-color: #f8f8f8;
+}
+
+.comparison-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.comparison-table td {
+  padding: 1.25rem 1rem;
+  font-size: 0.95rem;
+  color: #333333;
+  border-right: 1px solid #f0f0f0;
+}
+
+.comparison-table td:last-child {
+  border-right: none;
+}
+
+.comparison-table td:first-child {
+  font-weight: 600;
+  color: #000000;
+}
+
+.check-mark {
+  color: #000000;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.cross-mark {
+  color: #999999;
+  font-weight: 300;
+  font-size: 1.2rem;
+}
+
+/* FAQ Section */
+.subscription-faq {
+  margin-top: 6rem;
+  padding: 4rem 0;
+}
+
+.faq-title {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: #000000;
+  letter-spacing: -0.02em;
+}
+
+.faq-item {
+  padding: 2rem;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+  border-color: #000000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.faq-question {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.faq-answer {
+  font-size: 0.95rem;
+  color: #666666;
+  line-height: 1.6;
+  margin: 0;
+  font-weight: 300;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .subscriptions-title {
+    font-size: 2.5rem;
+  }
+
+  .subscription-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .price-amount {
+    font-size: 2.5rem;
+  }
+
+  .comparison-table {
+    font-size: 0.85rem;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 0.75rem 0.5rem;
+  }
+}
+
+/* Size button specific styles - preserve btn-secondary background */
+.size_button {
+  transition: transform 0.2s ease !important;
+  cursor: pointer;
+}
+
+/* Size buttons maintain their background color on hover */
+button.btn.size_button:hover,
+.btn.size_button:hover,
+button.size_button:hover,
+.size_button:hover {
+  /* Preserve btn-secondary background color - don't override */
+  opacity: 1 !important;
+  transform: scale(1.01) !important;
+  transition: transform 0.2s ease !important;
+}
+
+/* Size buttons maintain their background color on focus */
+button.btn.size_button:focus,
+.btn.size_button:focus,
+button.size_button:focus,
+.size_button:focus {
+  /* Preserve btn-secondary background color - don't override */
+  box-shadow: none !important;
+}
+
+button:hover:not(.color_button):not(.color-button):not(.size_button) {
   border-color: #000000 !important;
 }
 .page-link {
@@ -714,7 +1268,7 @@ input.form-control:-webkit-autofill,
     gap: 0.5rem;
     margin-top: 1rem;
   }
-  button:focus {
+  button:focus:not(.color_button):not(.color-button):not(.size_button) {
     background-color: transparent !important;
     color: #000000 !important;
     border: transparent !important;
@@ -726,7 +1280,7 @@ input.form-control:-webkit-autofill,
     gap: 0.5rem;
   }
 }
-button:focus {
+button:focus:not(.color_button):not(.color-button):not(.size_button) {
   background-color: transparent !important;
   color: #000000 !important;
   border: transparent !important;

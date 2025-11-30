@@ -289,6 +289,7 @@ function Shop() {
                                       className="color-button p-3 me-2"
                                       style={{
                                         backgroundColor: color.color_code,
+                                        "--color-button-bg": color.color_code,
                                       }}
                                       onClick={(e) =>
                                         handleColorButtonClick(

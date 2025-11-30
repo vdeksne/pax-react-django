@@ -40,6 +40,40 @@ function StoreHeader() {
     fetchCartCount();
   }, [cart_id, userData?.id]);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const sidePanel = document.querySelector(".side-panel");
+      if (!sidePanel) return;
+
+      // Check if click is outside the side panel or on a dropdown item (which should close it)
+      const isClickInsidePanel = sidePanel.contains(event.target);
+      const isClickOnDropdownButton = event.target.closest(
+        '.nav-link[role="button"]'
+      );
+      const isClickOnDropdownItem = event.target.closest(".dropdown-item");
+
+      // Close dropdowns if:
+      // 1. Click is outside the side panel, OR
+      // 2. Click is on a dropdown item (navigation link)
+      // But don't close if clicking on the dropdown button itself (that's handled by handleDropdownToggle)
+      if (
+        !isClickInsidePanel ||
+        (isClickOnDropdownItem && !isClickOnDropdownButton)
+      ) {
+        const allDropdowns = sidePanel.querySelectorAll(".dropdown-menu");
+        allDropdowns.forEach((dropdown) => {
+          dropdown.classList.remove("show");
+        });
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
   const handleSearchChange = (event) => {
     setSearch(event.target.value);
     console.log(search);
@@ -47,6 +81,28 @@ function StoreHeader() {
 
   const handleSearchSubmit = () => {
     navigate(`/search?query=${search}`);
+  };
+
+  // Helper function to close all dropdowns except the one being toggled
+  const handleDropdownToggle = (e, targetMenu) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Close all dropdown menus in the side panel
+    const sidePanel = document.querySelector(".side-panel");
+    if (sidePanel) {
+      const allDropdowns = sidePanel.querySelectorAll(".dropdown-menu");
+      allDropdowns.forEach((dropdown) => {
+        if (dropdown !== targetMenu) {
+          dropdown.classList.remove("show");
+        }
+      });
+    }
+
+    // Toggle the clicked dropdown
+    if (targetMenu) {
+      targetMenu.classList.toggle("show");
+    }
   };
 
   return (
@@ -103,10 +159,8 @@ function StoreHeader() {
                     className="nav-link p-0"
                     role="button"
                     onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation(); // Prevent event bubbling
                       const menu = e.currentTarget.nextElementSibling;
-                      menu.classList.toggle("show");
+                      handleDropdownToggle(e, menu);
                     }}
                   >
                     Account
@@ -200,10 +254,8 @@ function StoreHeader() {
                     className="nav-link p-0"
                     role="button"
                     onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation(); // Prevent event bubbling
                       const menu = e.currentTarget.nextElementSibling;
-                      menu.classList.toggle("show");
+                      handleDropdownToggle(e, menu);
                     }}
                   >
                     Artist/designer
@@ -361,10 +413,8 @@ function StoreHeader() {
                     className="nav-link p-0"
                     role="button"
                     onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation(); // Prevent event bubbling
                       const menu = e.currentTarget.nextElementSibling;
-                      menu.classList.toggle("show");
+                      handleDropdownToggle(e, menu);
                     }}
                   >
                     Pages

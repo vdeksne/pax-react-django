@@ -17,14 +17,23 @@ class ConfigSettingsSerializer(serializers.ModelSerializer):
 # Define a serializer for the Category model
 class CategorySerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
     
     class Meta:
         model = Category
         fields = '__all__'
     
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
+    
     def get_products(self, obj):
         products = Product.objects.filter(category=obj)
-        return ProductSerializer(products, many=True).data
+        return ProductSerializer(products, many=True, context=self.context).data
 
 # Define a serializer for the Tag model
 class TagSerializer(serializers.ModelSerializer):
@@ -34,18 +43,37 @@ class TagSerializer(serializers.ModelSerializer):
 
 # Define a serializer for the Brand model
 class BrandSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    
     class Meta:
         model = Brand
         fields = '__all__'
+    
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
 
         # Define a serializer for the Gallery model
 class GallerySerializer(serializers.ModelSerializer):
     # Serialize the related Product model
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Gallery
         fields = '__all__'
+    
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
 # Define a serializer for the Specification model
 class SpecificationSerializer(serializers.ModelSerializer):
@@ -63,10 +91,19 @@ class SizeSerializer(serializers.ModelSerializer):
 
 # Define a serializer for the Color model
 class ColorSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Color
         fields = '__all__'
+    
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
 
 # Define a serializer for the Product model
@@ -78,6 +115,7 @@ class ProductSerializer(serializers.ModelSerializer):
     color = ColorSerializer(many=True, read_only=True)
     size = SizeSerializer(many=True, read_only=True)
     specification = SpecificationSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
     # rating = serializers.IntegerField(required=False)
     
     # specification = SpecificationSerializer(many=True, required=False)
@@ -125,8 +163,17 @@ class ProductSerializer(serializers.ModelSerializer):
             "get_precentage",
         ]
     
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
+    
     def __init__(self, *args, **kwargs):
         super(ProductSerializer, self).__init__(*args, **kwargs)
+        # Context is automatically passed to nested serializers by DRF
         # Customize serialization depth based on the request method.
         request = self.context.get('request')
         if request and request.method == 'POST':
@@ -223,10 +270,19 @@ class CartOrderSerializer(serializers.ModelSerializer):
 class VendorSerializer(serializers.ModelSerializer):
     # Serialize related CartOrderItem models
     user = UserSerializer(read_only=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Vendor
         fields = '__all__'
+    
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
     def __init__(self, *args, **kwargs):
         super(VendorSerializer, self).__init__(*args, **kwargs)
