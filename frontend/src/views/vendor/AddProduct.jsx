@@ -9,8 +9,10 @@ import { useNavigate } from "react-router-dom";
 function AddProduct() {
   const userData = UserData();
 
-  if (UserData()?.vendor_id === 0) {
+  // Check if user has a vendor account
+  if (!userData || !userData.vendor_id || userData.vendor_id === 0) {
     window.location.href = "/vendor/register/";
+    return null;
   }
 
   const [product, setProduct] = useState({
@@ -24,7 +26,7 @@ function AddProduct() {
     old_price: "",
     shipping_amount: "",
     stock_qty: "",
-    vendor: userData?.vendor_id,
+    vendor: userData.vendor_id,
   });
   const [specifications, setSpecifications] = useState([
     { title: "", content: "" },
@@ -221,8 +223,19 @@ function AddProduct() {
         );
       }
 
+      // Validate vendor_id before making the request
+      if (!userData?.vendor_id || userData.vendor_id === 0) {
+        Swal.fire({
+          icon: "error",
+          title: "Vendor Account Required",
+          text: "You need to register as a vendor before creating products.",
+        });
+        navigate("/vendor/register/");
+        return;
+      }
+
       const response = await apiInstance.post(
-        `vendor-product-create/${userData?.vendor_id}/`,
+        `vendor-product-create/${userData.vendor_id}/`,
         formData,
         {
           headers: {

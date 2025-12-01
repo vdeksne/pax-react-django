@@ -152,9 +152,31 @@ class ProductCreateView(generics.CreateAPIView):
 
     @transaction.atomic
     def perform_create(self, serializer):
+        # Get vendor_id from URL and set it in the data
+        vendor_id = self.kwargs.get('vendor_id')
+        if vendor_id:
+            from vendor.models import Vendor
+            try:
+                vendor = Vendor.objects.get(id=vendor_id)
+                # Set vendor in initial data so it's available during validation
+                if hasattr(serializer, 'initial_data'):
+                    serializer.initial_data['vendor'] = vendor_id
+            except Vendor.DoesNotExist:
+                pass
+        
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        product_instance = serializer.instance
+        
+        # Ensure vendor is set in validated_data
+        if vendor_id:
+            from vendor.models import Vendor
+            try:
+                vendor = Vendor.objects.get(id=vendor_id)
+                serializer.validated_data['vendor'] = vendor
+            except Vendor.DoesNotExist:
+                pass
+        
+        # Save the product (vendor must be set for user_directory_path to work correctly)
+        product_instance = serializer.save()
 
         specifications_data = []
         colors_data = []
@@ -634,6 +656,76 @@ class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = ProfileSerializer
     permission_classes = (AllowAny, )
     parser_classes = (MultiPartParser, FormParser)
+    
+    def update(self, request, *args, **kwargs):
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        instance = self.get_object()
+        logger.info(f"Updating profile {instance.id} for user {instance.user.id if instance.user else 'None'}")
+        
+        # Log file information
+        if 'image' in request.FILES:
+            image_file = request.FILES['image']
+            logger.info(f"Image file in FILES: {image_file.name}, size: {image_file.size if hasattr(image_file, 'size') else 'unknown'}")
+        elif 'image' in request.data:
+            logger.info(f"Image in request.data: {type(request.data.get('image'))}")
+        
+        # Use serializer normally - let Django handle the file upload automatically
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        
+        # Check if image is in validated_data
+        if 'image' in serializer.validated_data:
+            logger.info(f"Image is in validated_data: {type(serializer.validated_data['image'])}")
+        else:
+            logger.warning("Image is NOT in validated_data - this might be the problem!")
+            # If image is in request but not validated, add it manually
+            if 'image' in request.FILES:
+                logger.info("Adding image from FILES to validated_data")
+                serializer.validated_data['image'] = request.FILES['image']
+            elif 'image' in request.data:
+                logger.info("Adding image from data to validated_data")
+                serializer.validated_data['image'] = request.data['image']
+        
+        # Save the instance - Django's FileField should automatically upload to S3
+        try:
+            updated_instance = serializer.save()
+            logger.info("Serializer save completed")
+            
+            # Explicitly save again to ensure file is uploaded
+            # Sometimes Django needs an explicit save() call to trigger S3 upload
+            if 'image' in serializer.validated_data:
+                logger.info("Image was in validated_data, forcing another save()")
+                updated_instance.save()
+                logger.info("Second save() completed")
+                    
+        except Exception as save_error:
+            logger.error(f"Error during serializer.save(): {save_error}")
+            import traceback
+            logger.error(traceback.format_exc())
+            raise
+        
+        updated_instance.refresh_from_db()
+        
+        # Verify the file was uploaded
+        if updated_instance.image:
+            logger.info(f"Final image path: {updated_instance.image.name}")
+            from backend.storages import MediaStorage
+            media_storage = MediaStorage()
+            if hasattr(updated_instance.image, 'name'):
+                exists = media_storage.exists(updated_instance.image.name)
+                logger.info(f"Image exists in S3: {exists}")
+                if exists:
+                    try:
+                        url = updated_instance.image.url
+                        logger.info(f"Image URL: {url}")
+                    except Exception as url_err:
+                        logger.error(f"Error getting URL: {url_err}")
+                else:
+                    logger.error(f"CRITICAL: Image file does not exist in S3: {updated_instance.image.name}")
+        
+        return Response(serializer.data)
 
 
 class ShopUpdateView(generics.RetrieveUpdateAPIView):
@@ -641,6 +733,76 @@ class ShopUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = VendorSerializer
     permission_classes = (AllowAny, )      
     parser_classes = (MultiPartParser, FormParser)
+    
+    def update(self, request, *args, **kwargs):
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        instance = self.get_object()
+        logger.info(f"Updating vendor {instance.id} (shop: {instance.name})")
+        
+        # Log file information
+        if 'image' in request.FILES:
+            image_file = request.FILES['image']
+            logger.info(f"Image file in FILES: {image_file.name}, size: {image_file.size if hasattr(image_file, 'size') else 'unknown'}")
+        elif 'image' in request.data:
+            logger.info(f"Image in request.data: {type(request.data.get('image'))}")
+        
+        # Use serializer normally - let Django handle the file upload automatically
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        
+        # Check if image is in validated_data
+        if 'image' in serializer.validated_data:
+            logger.info(f"Image is in validated_data: {type(serializer.validated_data['image'])}")
+        else:
+            logger.warning("Image is NOT in validated_data - this might be the problem!")
+            # If image is in request but not validated, add it manually
+            if 'image' in request.FILES:
+                logger.info("Adding image from FILES to validated_data")
+                serializer.validated_data['image'] = request.FILES['image']
+            elif 'image' in request.data:
+                logger.info("Adding image from data to validated_data")
+                serializer.validated_data['image'] = request.data['image']
+        
+        # Save the instance - Django's FileField should automatically upload to S3
+        try:
+            updated_instance = serializer.save()
+            logger.info("Serializer save completed")
+            
+            # Explicitly save again to ensure file is uploaded
+            # Sometimes Django needs an explicit save() call to trigger S3 upload
+            if 'image' in serializer.validated_data:
+                logger.info("Image was in validated_data, forcing another save()")
+                updated_instance.save()
+                logger.info("Second save() completed")
+                    
+        except Exception as save_error:
+            logger.error(f"Error during serializer.save(): {save_error}")
+            import traceback
+            logger.error(traceback.format_exc())
+            raise
+        
+        updated_instance.refresh_from_db()
+        
+        # Verify the file was uploaded
+        if updated_instance.image:
+            logger.info(f"Final image path: {updated_instance.image.name}")
+            from backend.storages import MediaStorage
+            media_storage = MediaStorage()
+            if hasattr(updated_instance.image, 'name'):
+                exists = media_storage.exists(updated_instance.image.name)
+                logger.info(f"Image exists in S3: {exists}")
+                if exists:
+                    try:
+                        url = updated_instance.image.url
+                        logger.info(f"Image URL: {url}")
+                    except Exception as url_err:
+                        logger.error(f"Error getting URL: {url_err}")
+                else:
+                    logger.error(f"CRITICAL: Image file does not exist in S3: {updated_instance.image.name}")
+        
+        return Response(serializer.data)
 
 
 class ShopAPIView(generics.RetrieveUpdateAPIView):
@@ -669,28 +831,77 @@ class VendorRegister(generics.CreateAPIView):
     serializer_class = VendorSerializer
     queryset = Vendor.objects.all()
     permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
 
     def create(self, request, *args, **kwargs):
-        payload = request.data
+        try:
+            payload = request.data
 
-        image = payload['image']
-        name = payload['name']
-        email = payload['email']
-        description = payload['description']
-        mobile = payload['mobile']
-        user_id = payload['user_id']
+            # Get user object
+            user_id = payload.get('user_id')
+            if not user_id:
+                return Response(
+                    {"error": "user_id is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-        Vendor.objects.create(
-            image=image,
-            name=name,
-            email=email,
-            description=description,
-            mobile=mobile,
-            user_id=user_id,
-        )
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "User not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-        return Response({"message":"Created vendor account"})
+            # Check if user already has a vendor account
+            if hasattr(user, 'vendor'):
+                return Response(
+                    {"error": "User already has a vendor account"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Create vendor
+            vendor = Vendor.objects.create(
+                user=user,
+                image=payload.get('image'),
+                name=payload.get('name'),
+                email=payload.get('email'),
+                description=payload.get('description'),
+                mobile=payload.get('mobile'),
+            )
+
+            return Response({"message": "Created vendor account"}, status=status.HTTP_201_CREATED)
+        
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
+
+class CheckVendorStatusView(APIView):
+    """Check if a user has a vendor account"""
+    permission_classes = [AllowAny]
+    
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            if hasattr(user, 'vendor') and user.vendor:
+                return Response({
+                    "has_vendor": True,
+                    "vendor_id": user.vendor.id
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    "has_vendor": False,
+                    "vendor_id": None
+                }, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
 
 class CourierListAPIView(generics.ListAPIView):
     queryset = DeliveryCouriers.objects.all()

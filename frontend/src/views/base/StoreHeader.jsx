@@ -4,8 +4,6 @@ import { Link } from "react-router-dom";
 import { CartContext } from "../plugin/Context";
 import { useNavigate } from "react-router-dom";
 import "../../App.css";
-import apiInstance from "../../utils/axios";
-import CartID from "../plugin/cartID";
 
 function StoreHeader() {
   const { cartCount, updateCartCount } = useContext(CartContext);
@@ -17,28 +15,10 @@ function StoreHeader() {
   ]);
 
   const userData = user();
-  const axios = apiInstance;
-  const cart_id = CartID();
-
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchCartCount = async () => {
-      try {
-        const url = userData?.id
-          ? `cart-list/${cart_id}/${userData.id}/`
-          : `cart-list/${cart_id}/`;
-
-        const response = await axios.get(url);
-        const filteredCart = response.data.filter((item) => item.qty > 0);
-        updateCartCount(filteredCart.length);
-      } catch (error) {
-        console.error("Error fetching cart count:", error);
-      }
-    };
-
-    fetchCartCount();
-  }, [cart_id, userData?.id]);
+  // Cart count is now managed by CartProvider Context
+  // No need to fetch here - Context handles it automatically
 
   // Close dropdowns when clicking outside
   useEffect(() => {

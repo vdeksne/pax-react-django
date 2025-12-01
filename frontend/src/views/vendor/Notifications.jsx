@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from "react";
 import moment from "moment";
 
@@ -85,7 +86,7 @@ function Notifications() {
             <i className="bi bi-bell-fill" /> Notifications
           </h4>
           <div className="dropdown"></div>
-          <div className="col-md-12 col-lg-12 main mt-4">
+          <div className="col-md-12 col-lg-12 mt-4 ml-0 mr-0">
             <div className="row mb-3">
               <div className="col-xl-4 col-lg-6 mb-2">
                 <div className="card card-inverse card-success">

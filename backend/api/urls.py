@@ -90,6 +90,7 @@ urlpatterns = [
     path('shop/<vendor_slug>/', vendor_views.ShopAPIView.as_view(), name='shop'),
     path('vendor-products/<vendor_slug>/', vendor_views.ShopProductsAPIView.as_view(), name='vendor-products'),
     path('vendor-register/', vendor_views.VendorRegister.as_view(), name='vendor-register'),
+    path('check-vendor-status/<int:user_id>/', vendor_views.CheckVendorStatusView.as_view(), name='check-vendor-status'),
 
     # Tracking Feature
     path('vendor/couriers/', vendor_views.CourierListAPIView.as_view()),

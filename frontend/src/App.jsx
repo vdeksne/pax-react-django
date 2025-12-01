@@ -1,7 +1,6 @@
 import "./App.css"; // Importing the CSS file for styling.
 
 import { Route, Routes, BrowserRouter } from "react-router-dom"; // Importing necessary components from 'react-router-dom' for routing.
-import { useEffect, useState } from "react";
 import Home from "./views/shop/home"; // Importing the 'Home' component.
 import MainWrapper from "./layouts/MainWrapper"; // Importing the 'MainWrapper' component.
 import Login from "./views/auth/login"; // Importing the 'Login' component.
@@ -23,9 +22,6 @@ import Wishlist from "./views/customer/Wishlist";
 import Notifications from "./views/customer/Notifications";
 import Settings from "./views/customer/Settings";
 import { CartProvider } from "./views/plugin/Context";
-import UserData from "./views/plugin/UserData";
-import CartID from "./views/plugin/cartID";
-import apiInstance from "./utils/axios";
 import Dashboard from "./views/vendor/Dashboard";
 import VendorProducts from "./views/vendor/Products";
 import AddProduct from "./views/vendor/AddProduct";
@@ -51,28 +47,7 @@ import Products from "./views/shop/Products";
 
 function App() {
   // Define the main 'App' component.
-  const [cartCount, setCartCount] = useState();
-  const userData = UserData();
-  let cart_id = CartID();
-  const axios = apiInstance;
-
-  useEffect(() => {
-    if (!cart_id) return;
-
-    const fetchCartCount = async () => {
-      try {
-        const url = userData?.user_id
-          ? `cart-list/${cart_id}/${userData?.user_id}/`
-          : `cart-list/${cart_id}/`;
-        const response = await axios.get(url);
-        setCartCount(response.data.length);
-      } catch (error) {
-        console.error("Error fetching cart count:", error);
-      }
-    };
-
-    fetchCartCount();
-  }, [cart_id, userData?.user_id, axios]);
+  // Cart count is now managed by CartProvider Context, no need to fetch here
 
   return (
     <CartProvider>

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -41,6 +42,17 @@ function Settings() {
   const fetchProfileData = async () => {
     try {
       const res = await axios.get(`vendor-settings/${userData?.user_id}/`);
+      console.log("Profile API Response:", res.data);
+      console.log("Profile Image URL:", res.data?.image);
+
+      // Only use the image URL if it's a valid string and not null/undefined
+      const imageUrl =
+        res.data?.image &&
+        typeof res.data.image === "string" &&
+        res.data.image.trim() !== ""
+          ? res.data.image
+          : "";
+
       setProfileData({
         full_name: res.data?.full_name || "",
         email: res.data.user?.email || "",
@@ -50,9 +62,13 @@ function Settings() {
         city: res.data?.city || "",
         state: res.data?.state || "",
         address: res.data?.address || "",
-        p_image: res.data?.image || "",
+        p_image: imageUrl,
       });
-      setprofileImage(res.data?.image || "");
+      setprofileImage(imageUrl);
+      console.log(
+        "Set profileImage to:",
+        imageUrl || "(empty - will show placeholder)"
+      );
     } catch (error) {
       console.error("Error fetching profile data:", error);
     }
@@ -116,10 +132,9 @@ function Settings() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    const res = await axios.get(`user/profile/${userData?.user_id}/`);
-
     const formData = new FormData();
-    if (profileData.p_image && profileData.p_image !== res.data.image) {
+    // Always append image if it's a File object (new upload)
+    if (profileData.p_image instanceof File) {
       formData.append("image", profileData.p_image);
     }
     formData.append("full_name", profileData.full_name);
@@ -139,23 +154,29 @@ function Settings() {
           },
         }
       );
-      fetchProfileData();
+      // Wait a moment for S3 to propagate the file
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await fetchProfileData();
       Swal.fire({
         icon: "success",
         title: "Profile updated successfully",
       });
     } catch (error) {
       console.error("Error updating profile:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.response?.data?.detail || "Failed to update profile",
+      });
     }
   };
 
   const handleShopFormSubmit = async (e) => {
     e.preventDefault();
 
-    const res = await axios.get(`vendor-shop-settings/${userData?.vendor_id}/`);
-
     const formData = new FormData();
-    if (vendorData.image && vendorData.image !== res.data.image) {
+    // Always append image if it's a File object (new upload)
+    if (vendorData.image instanceof File) {
       formData.append("image", vendorData.image);
     }
     formData.append("name", vendorData.name);
@@ -172,13 +193,20 @@ function Settings() {
           },
         }
       );
+      // Wait a moment for S3 to propagate the file
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await fetchVendorData();
       Swal.fire({
         icon: "success",
         title: "Shop updated successfully",
       });
-      await fetchVendorData();
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("Error updating shop:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.response?.data?.detail || "Failed to update shop",
+      });
     }
   };
 
@@ -374,6 +402,10 @@ function Settings() {
                               alt={profileData.full_name + " Image"}
                               className="rounded-circle"
                               width={150}
+                              onError={(e) => {
+                                e.target.src =
+                                  "https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca.gif";
+                              }}
                             />
                             <div className="mt-3">
                               <h4 className="text-dark">

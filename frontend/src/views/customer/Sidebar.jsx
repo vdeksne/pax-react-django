@@ -68,10 +68,20 @@ function Sidebar() {
     ? userProfile.image
     : "/images/default-profile.jpg";
 
+  const handleImageError = (e) => {
+    // If image fails to load (404, etc.), use default image
+    e.target.src = "/images/default-profile.jpg";
+  };
+
   return (
     <div className="col-lg-3 sidebar-container">
       <div className="sidebar-profile">
-        <img src={profileImageUrl} alt="Profile" className="img-fluid" />
+        <img
+          src={profileImageUrl}
+          alt="Profile"
+          className="img-fluid"
+          onError={handleImageError}
+        />
         <div className="text-center">
           <h3>{userProfile?.full_name}</h3>
           <p>

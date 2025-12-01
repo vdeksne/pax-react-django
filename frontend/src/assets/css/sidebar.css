@@ -168,3 +168,45 @@
 .card {
   padding: 0;
 }
+
+/* Fix main content positioning when sidebar is fixed */
+/* The sidebar is col-md-3 col-lg-2 and position-fixed, so main content needs margin */
+/* Uses CSS variable --sidebar-width that is updated by JavaScript */
+#main .row-offcanvas .main {
+  transition:
+    margin-left 0.3s ease-in-out,
+    padding-left 0.3s ease-in-out;
+  padding-right: 1rem;
+}
+
+/* On large screens (≥992px), sidebar is col-lg-2 (16.666667% = ~200px on 1200px screen) */
+@media (min-width: 992px) {
+  #main .row-offcanvas .main {
+    margin-left: var(--sidebar-width, 16.666667%) !important;
+  }
+
+  /* Adjust padding based on sidebar state */
+  #sidebar[data-expanded="true"] ~ .main {
+    padding-left: 2rem !important;
+  }
+
+  #sidebar[data-expanded="false"] ~ .main {
+    padding-left: 1.5rem !important;
+  }
+}
+
+/* On medium screens (≥768px), sidebar is col-md-3 (25% = ~192px on 768px screen) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  #main .row-offcanvas .main {
+    margin-left: var(--sidebar-width, 25%) !important;
+    padding-left: 1.5rem !important;
+  }
+}
+
+/* On small screens, sidebar is not fixed or is hidden, no margin needed */
+@media (max-width: 767.98px) {
+  #main .row-offcanvas .main {
+    margin-left: 0 !important;
+    padding-left: 1rem !important;
+  }
+}

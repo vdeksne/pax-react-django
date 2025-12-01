@@ -38,10 +38,11 @@ ALLOWED_HOSTS = [
     "localhost",
 ]
 CSRF_TRUSTED_ORIGINS = [
-
     'https://desirable-communication-production.up.railway.app',
     'http://127.0.0.1',
     'http://127.0.0.1:8000',
+    'http://localhost:5173',
+    'http://localhost:3000',
 ]
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
@@ -206,13 +207,18 @@ USE_S3 = (
 if USE_S3:
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = 'public-read'
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-    AWS_LOCATION = 'static'
+    
+    # Static files location
     STATIC_LOCATION = 'static'
+    STATICFILES_STORAGE = 'backend.storages.StaticStorage'
     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
+    
+    # Media files location (for user uploads)
+    MEDIA_LOCATION = 'media'
+    DEFAULT_FILE_STORAGE = 'backend.storages.MediaStorage'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIA_LOCATION}/'
 else:
     # Use local file storage for development
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
@@ -254,6 +260,13 @@ DEFAULT_FROM_EMAIL = " viktorijadeksne@gmail.com"
 SERVER_EMAIL = " viktorijadeksne@gmail.com"
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
 
 SIMPLE_JWT = {

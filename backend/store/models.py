@@ -222,7 +222,7 @@ class Product(models.Model):
     # Product title
     title = models.CharField(max_length=100)
     # Image for the product
-    image = models.FileField(upload_to=user_directory_path, blank=True, null=True, default="product.jpg")
+    image = models.FileField(upload_to=user_directory_path, blank=True, null=True)
     # Description for the product using HTML
     description = models.TextField(null=True, blank=True)
     

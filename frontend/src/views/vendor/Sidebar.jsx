@@ -1,29 +1,64 @@
 import { Link, useLocation } from "react-router-dom";
 import UserData from "../plugin/UserData";
 import "../../assets/css/sidebar.css";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 function Sidebar() {
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(true);
+  const userData = UserData();
+
+  // Memoize vendor_id to prevent unnecessary checks
+  const vendorId = useMemo(
+    () => userData?.vendor_id || 0,
+    [userData?.vendor_id]
+  );
 
   const isActiveLink = (currentPath, linkPath) => {
     return currentPath.includes(linkPath);
   };
 
-  if (UserData()?.vendor_id === 0) {
-    window.location.href = "/vendor/register/";
-  }
+  // Removed redirect from Sidebar - let Dashboard handle navigation
+  // Sidebar should not redirect, as it's used across multiple vendor pages
 
   const toggleSidebar = () => {
     setIsExpanded(!isExpanded);
   };
+
+  // Update CSS variable when sidebar state changes
+  useEffect(() => {
+    const updateSidebarWidth = () => {
+      const root = document.documentElement;
+      if (window.innerWidth >= 768) {
+        if (window.innerWidth >= 992) {
+          // Large screens: col-lg-2 = 16.666667% when expanded, 3rem when collapsed
+          root.style.setProperty(
+            "--sidebar-width",
+            isExpanded ? "16.666667%" : "3rem"
+          );
+        } else {
+          // Medium screens: col-md-3 = 25% when expanded, 3rem when collapsed
+          root.style.setProperty(
+            "--sidebar-width",
+            isExpanded ? "25%" : "3rem"
+          );
+        }
+      } else {
+        root.style.setProperty("--sidebar-width", "0");
+      }
+    };
+
+    updateSidebarWidth();
+    window.addEventListener("resize", updateSidebarWidth);
+    return () => window.removeEventListener("resize", updateSidebarWidth);
+  }, [isExpanded]);
 
   return (
     <div
       className="col-md-3 col-lg-2 sidebar-offcanvas bg-dark navbar-dark text-start position-fixed"
       id="sidebar"
       role="navigation"
+      data-expanded={isExpanded}
       style={{
         overflowY: "auto",
         top: 0,

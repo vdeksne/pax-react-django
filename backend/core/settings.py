@@ -4,7 +4,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://*.netlify.app",  # Allow all Netlify subdomains
 ]
 
-# If you have a specific Netlify domain, add it here
+# specific Netlify domain
 CORS_ALLOWED_ORIGINS += [
-    "https://your-app-name.netlify.app",  # Replace with your actual Netlify domain
+    "pax-connect.netlify.app",  
 ] 

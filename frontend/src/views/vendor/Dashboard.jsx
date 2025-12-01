@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import moment from "moment";
 import { Line } from "react-chartjs-2";
 import {
@@ -11,6 +11,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 
 // Register ChartJS components
@@ -21,7 +22,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 import apiInstance from "../../utils/axios";
@@ -34,46 +36,323 @@ function Dashboard() {
   const [orders, setOrders] = useState(null);
   const [orderChartData, setOrderChartData] = useState(null);
   const [productsChartData, setProductsChartData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const axios = apiInstance;
   const userData = UserData();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fetchingRef = useRef(false);
+  const lastVendorIdRef = useRef(null);
 
+  // Extract vendor_id and memoize it to prevent unnecessary re-renders
+  // Use the actual vendor_id value, not the userData object
+  const vendorIdValue = userData?.vendor_id;
+  const vendorId = useMemo(() => {
+    if (!vendorIdValue || vendorIdValue === 0) {
+      return null;
+    }
+    return vendorIdValue;
+  }, [vendorIdValue]);
+
+  // Use sessionStorage to prevent redirect loops
+  const redirectKey = "vendor_dashboard_redirect_checked";
+  const redirectCheckedRef = useRef(false);
+  const redirectTimeoutRef = useRef(null);
+
+  // Initialize redirect state - check sessionStorage, but vendorId check happens in useEffect
+  const [isRedirecting, setIsRedirecting] = useState(() => {
+    if (location.pathname === "/vendor/dashboard/") {
+      const status = sessionStorage.getItem(redirectKey);
+      // If marked as redirecting, return true (but will be overridden if vendorId exists)
+      if (status === "redirecting") {
+        return true;
+      }
+      // If marked as valid, we've already checked
+      if (status === "valid") {
+        redirectCheckedRef.current = true;
+        return false;
+      }
+    }
+    return false;
+  });
+
+  // State to track if we've verified vendor status from backend
+  const [vendorStatusChecked, setVendorStatusChecked] = useState(false);
+  const vendorCheckRef = useRef(false);
+
+  // Effect to verify vendor status from backend if token doesn't have it
   useEffect(() => {
-    if (userData?.vendor_id === 0) {
-      navigate("/vendor/register/");
+    if (
+      location.pathname === "/vendor/dashboard/" &&
+      userData &&
+      userData.user_id &&
+      !vendorCheckRef.current &&
+      !vendorStatusChecked
+    ) {
+      // If token shows no vendor_id, check with backend
+      if (!vendorId || vendorId === 0) {
+        vendorCheckRef.current = true;
+        // Check vendor status using dedicated endpoint
+        axios
+          .get(`check-vendor-status/${userData.user_id}/`)
+          .then((response) => {
+            const { has_vendor, vendor_id } = response.data;
+            if (has_vendor && vendor_id) {
+              // User has vendor account, clear redirect status
+              sessionStorage.removeItem(redirectKey);
+              setIsRedirecting(false);
+              redirectCheckedRef.current = true;
+              setVendorStatusChecked(true);
+              console.log(
+                "Vendor account confirmed via backend check, vendor_id:",
+                vendor_id
+              );
+            } else {
+              // No vendor account
+              setVendorStatusChecked(true);
+              console.log("No vendor account found for user");
+            }
+          })
+          .catch((error) => {
+            console.error("Error checking vendor status:", error);
+            // On error, proceed with redirect check
+            setVendorStatusChecked(true);
+          });
+      } else {
+        // Token has vendor_id, we're good
+        setVendorStatusChecked(true);
+      }
+    }
+  }, [userData, vendorId, location.pathname, vendorStatusChecked]);
+
+  // Effect to clear redirect status when vendorId becomes available
+  useEffect(() => {
+    if (
+      location.pathname === "/vendor/dashboard/" &&
+      vendorId &&
+      vendorId !== 0
+    ) {
+      // If we have a vendorId, clear any redirect status immediately
+      sessionStorage.removeItem(redirectKey);
+      setIsRedirecting(false);
+      redirectCheckedRef.current = true;
+    }
+  }, [vendorId, location.pathname]);
+
+  // Single redirect check - runs only once per route change
+  useEffect(() => {
+    // Clear any pending timeouts
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current);
+      redirectTimeoutRef.current = null;
+    }
+
+    // Only check if we're on the dashboard route
+    if (location.pathname !== "/vendor/dashboard/") {
+      // Don't clear sessionStorage when leaving - keep state
+      redirectCheckedRef.current = false;
+      setIsRedirecting(false);
       return;
     }
 
-    const fetchAllData = async () => {
-      try {
-        const [
-          statsResponse,
-          productsResponse,
-          ordersResponse,
-          orderChartResponse,
-          productChartResponse,
-        ] = await Promise.all([
-          axios.get(`vendor/stats/${userData?.vendor_id}/`),
-          axios.get(`vendor/products/${userData?.vendor_id}/`),
-          axios.get(`vendor/orders/${userData?.vendor_id}/`),
-          axios.get(`vendor-orders-report-chart/${userData?.vendor_id}/`),
-          axios.get(`vendor-products-report-chart/${userData?.vendor_id}/`),
-        ]);
+    // If we have a vendorId, don't check - allow access
+    if (vendorId && vendorId !== 0) {
+      sessionStorage.removeItem(redirectKey);
+      setIsRedirecting(false);
+      redirectCheckedRef.current = true;
+      return;
+    }
 
-        setStats(statsResponse.data[0]);
-        setProducts(productsResponse.data);
-        setOrders(ordersResponse.data);
-        setOrderChartData(orderChartResponse.data);
-        setProductsChartData(productChartResponse.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
+    // If we've already checked and decided, don't check again
+    if (redirectCheckedRef.current) {
+      return;
+    }
+
+    // Wait for userData to be available
+    if (userData === undefined) {
+      return;
+    }
+
+    // Wait for vendor status check to complete before redirecting
+    if (!vendorStatusChecked) {
+      return;
+    }
+
+    // Use a timeout to ensure we only check once after everything is stable
+    redirectTimeoutRef.current = setTimeout(() => {
+      // Double-check we're still on dashboard and haven't checked
+      if (
+        location.pathname !== "/vendor/dashboard/" ||
+        redirectCheckedRef.current
+      ) {
+        return;
+      }
+
+      // PRIORITY 1: If we have a valid vendorId, always allow access (clear any stale redirect status)
+      if (vendorId && vendorId !== 0) {
+        // Clear any redirect status and mark as valid
+        sessionStorage.removeItem(redirectKey);
+        setIsRedirecting(false);
+        redirectCheckedRef.current = true;
+        return;
+      }
+
+      // PRIORITY 2: If no vendorId and user is logged in, redirect (only after vendor status is checked)
+      if (
+        userData !== null &&
+        userData !== undefined &&
+        (!vendorId || vendorId === 0) &&
+        vendorStatusChecked
+      ) {
+        // Mark as redirecting in sessionStorage
+        sessionStorage.setItem(redirectKey, "redirecting");
+        setIsRedirecting(true);
+        redirectCheckedRef.current = true;
+        // Use window.location for immediate redirect
+        window.location.href = "/vendor/register/";
+        return;
+      }
+
+      // PRIORITY 3: If sessionStorage says redirecting but we don't have vendorId, honor it
+      const alreadyChecked = sessionStorage.getItem(redirectKey);
+      if (
+        alreadyChecked === "redirecting" &&
+        (!vendorId || vendorId === 0) &&
+        vendorStatusChecked
+      ) {
+        setIsRedirecting(true);
+        redirectCheckedRef.current = true;
+        window.location.href = "/vendor/register/";
+        return;
+      }
+    }, 300); // Slightly longer delay to ensure stability
+
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
       }
     };
+    // Only depend on location.pathname to prevent re-runs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
-    fetchAllData();
-  }, [userData?.vendor_id, axios, navigate]);
+  // Separate effect for data fetching - MUST be called before any early returns
+  useEffect(() => {
+    // Don't fetch if no vendorId
+    if (!vendorId) {
+      return;
+    }
 
+    // Prevent duplicate fetches - check both refs
+    if (fetchingRef.current) {
+      return;
+    }
+
+    if (lastVendorIdRef.current === vendorId) {
+      return;
+    }
+
+    // Use a small delay to debounce and ensure we don't run multiple times
+    const timeoutId = setTimeout(() => {
+      // Double-check after timeout
+      if (fetchingRef.current || lastVendorIdRef.current === vendorId) {
+        return;
+      }
+
+      const fetchAllData = async () => {
+        try {
+          fetchingRef.current = true;
+          setIsLoading(true);
+          lastVendorIdRef.current = vendorId;
+
+          const [
+            statsResponse,
+            productsResponse,
+            ordersResponse,
+            orderChartResponse,
+            productChartResponse,
+          ] = await Promise.all([
+            axios.get(`vendor/stats/${vendorId}/`),
+            axios.get(`vendor/products/${vendorId}/`),
+            axios.get(`vendor/orders/${vendorId}/`),
+            axios.get(`vendor-orders-report-chart/${vendorId}/`),
+            axios.get(`vendor-products-report-chart/${vendorId}/`),
+          ]);
+
+          setStats(statsResponse.data[0]);
+          setProducts(productsResponse.data);
+          setOrders(ordersResponse.data);
+          setOrderChartData(orderChartResponse.data);
+          setProductsChartData(productChartResponse.data);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          // Reset ref on error so it can retry
+          lastVendorIdRef.current = null;
+        } finally {
+          setIsLoading(false);
+          fetchingRef.current = false;
+        }
+      };
+
+      fetchAllData();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+    // Only depend on vendorId
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorId]);
+
+  // NOW we can do early returns after all hooks are called
+  // Early return if redirecting - prevents any rendering
+  if (isRedirecting) {
+    return null;
+  }
+
+  // Show loading while checking vendor status
+  if (
+    location.pathname === "/vendor/dashboard/" &&
+    !vendorStatusChecked &&
+    userData
+  ) {
+    return (
+      <div className="container-fluid" id="main">
+        <div className="row row-offcanvas row-offcanvas-left h-100">
+          <Sidebar />
+          <div className="col-md-9 col-lg-10 main mt-4">
+            <div className="text-center p-5">
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-3">Verifying vendor status...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If userData is still loading, show loading state
+  if (userData === undefined) {
+    return (
+      <div className="container-fluid" id="main">
+        <div className="row row-offcanvas row-offcanvas-left h-100">
+          <Sidebar />
+          <div className="col-md-9 col-lg-10 main mt-4">
+            <div className="text-center p-5">
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-3">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Data processing (not hooks, so this is fine)
   const order_months = orderChartData?.map((item) => item.month);
   const order_counts = orderChartData?.map((item) => item.orders);
 
@@ -105,6 +384,25 @@ function Dashboard() {
       },
     ],
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="container-fluid" id="main">
+        <div className="row row-offcanvas row-offcanvas-left h-100">
+          <Sidebar />
+          <div className="col-md-9 col-lg-10 main mt-4">
+            <div className="text-center p-5">
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-3">Loading dashboard data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container-fluid" id="main">

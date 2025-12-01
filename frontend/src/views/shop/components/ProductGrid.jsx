@@ -32,7 +32,8 @@ const ProductGrid = ({
                     src={
                       selectedProduct === product.id && colorImage
                         ? colorImage
-                        : product.image
+                        : product.image ||
+                          "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png"
                     }
                     className="w-100"
                     style={{
@@ -40,6 +41,11 @@ const ProductGrid = ({
                       objectFit: "cover",
                     }}
                     alt={product.title}
+                    onError={(e) => {
+                      // Fallback to placeholder if image fails to load
+                      e.target.src =
+                        "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
+                    }}
                   />
                 </Link>
               </div>
