@@ -7,8 +7,8 @@ const apiInstance = axios.create({
   // Set the base URL for this instance. All requests made using this instance will have this URL as their starting point.
   baseURL: API_BASE_URL,
 
-  // Set a timeout for requests made using this instance. If a request takes longer than 10 seconds to complete, it will be canceled.
-  timeout: 10000, // timeout after 10 seconds
+  // Set a timeout for requests made using this instance. Increased to 20 seconds for slower connections.
+  timeout: 20000, // timeout after 20 seconds
 
   // Define headers that will be included in every request made using this instance.
   headers: {
@@ -27,6 +27,23 @@ apiInstance.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Add a response interceptor to handle errors gracefully
+apiInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle timeout errors specifically
+    if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+      console.warn("Request timeout - server may be slow or unreachable");
+      // Don't throw - let individual components handle the error
+    }
+    // Handle network errors
+    if (error.code === "ERR_NETWORK" || !error.response) {
+      console.warn("Network error - check backend connection");
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Export the 'apiInstance' so that it can be used in other parts of the codebase. Other modules can import and use this Axios instance for making API requests.
 export default apiInstance;

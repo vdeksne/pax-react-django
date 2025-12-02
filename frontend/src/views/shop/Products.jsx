@@ -59,20 +59,38 @@ function Products() {
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
-  // Fetch data in parallel
+  // Fetch data in parallel with better error handling
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        const [productsRes, categoryRes] = await Promise.all([
-          apiInstance.get("products/"),
-          apiInstance.get("category/"),
+        // Use Promise.allSettled to handle partial failures gracefully
+        const [productsResult, categoryResult] = await Promise.allSettled([
+          apiInstance.get("products/", { timeout: 20000 }),
+          apiInstance.get("category/", { timeout: 20000 }),
         ]);
 
-        setProducts(productsRes.data);
-        setCategory(categoryRes.data);
+        // Handle products
+        if (productsResult.status === "fulfilled") {
+          setProducts(productsResult.value.data);
+        } else {
+          console.warn("Failed to load products:", productsResult.reason);
+          setProducts([]); // Set empty array so page still renders
+        }
+
+        // Handle categories
+        if (categoryResult.status === "fulfilled") {
+          setCategory(categoryResult.value.data);
+        } else {
+          console.warn("Failed to load categories:", categoryResult.reason);
+          setCategory([]); // Set empty array so page still renders
+        }
+
         setLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
+        // Set empty arrays so page still renders even if API fails
+        setProducts([]);
+        setCategory([]);
         setLoading(false);
       }
     };

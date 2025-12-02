@@ -43,11 +43,16 @@ export const CartProvider = ({ children }) => {
       const url = userId
         ? `cart-list/${cart_id}/${userId}/`
         : `cart-list/${cart_id}/`;
-      const response = await axios.get(url);
+      const response = await axios.get(url, { timeout: 15000 }); // 15 second timeout for cart
       setCartCount(response.data.length);
       lastFetchRef.current = { cart_id, user_id: userId };
     } catch (error) {
-      console.error("Error fetching cart count:", error);
+      // Silently handle cart count errors - don't break the app
+      if (error.code !== "ECONNABORTED" && error.code !== "ERR_NETWORK") {
+        console.warn("Error fetching cart count:", error);
+      }
+      // Keep cart count at 0 if fetch fails
+      setCartCount(0);
     } finally {
       setIsLoading(false);
       fetchingRef.current = false;
