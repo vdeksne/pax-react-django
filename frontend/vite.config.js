@@ -16,10 +16,31 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom", "react-router-dom"],
+        manualChunks: (id) => {
+          // Split vendor chunks for better caching
+          if (id.includes("node_modules")) {
+            if (id.includes("react") || id.includes("react-dom")) {
+              return "react-vendor";
+            }
+            if (id.includes("react-router")) {
+              return "router-vendor";
+            }
+            if (id.includes("axios")) {
+              return "axios-vendor";
+            }
+            if (id.includes("chart.js") || id.includes("react-chartjs")) {
+              return "chart-vendor";
+            }
+            // Other large dependencies
+            return "vendor";
+          }
         },
       },
+      // Optimize chunk size
+      chunkSizeWarningLimit: 1000,
     },
+    // Enable minification and source maps
+    minify: "terser",
+    sourcemap: false, // Disable in production for faster builds
   },
 });

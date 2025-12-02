@@ -7,8 +7,8 @@ const apiInstance = axios.create({
   // Set the base URL for this instance. All requests made using this instance will have this URL as their starting point.
   baseURL: API_BASE_URL,
 
-  // Set a timeout for requests made using this instance. If a request takes longer than 5 seconds to complete, it will be canceled.
-  timeout: 100000, // timeout after 5 seconds
+  // Set a timeout for requests made using this instance. If a request takes longer than 10 seconds to complete, it will be canceled.
+  timeout: 10000, // timeout after 10 seconds
 
   // Define headers that will be included in every request made using this instance.
   headers: {

@@ -34,3 +34,4 @@ class MediaStorage(S3Boto3Storage):
         # For backward compatibility: existing files are in static/, new files go to media/
         # We'll handle this in the serializer to check both locations
         return url
+

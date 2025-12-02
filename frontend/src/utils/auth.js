@@ -144,10 +144,22 @@ export const setAuthUser = (access_token, refresh_token) => {
 
 // Function to refresh the access token using the refresh token
 export const getRefreshToken = async (refresh_token) => {
-  const { data } = await axios.post("user/token/refresh/", {
-    refresh: refresh_token,
-  });
-  return data;
+  try {
+    const { data } = await axios.post(
+      "user/token/refresh/",
+      {
+        refresh: refresh_token,
+      },
+      {
+        timeout: 5000, // 5 second timeout for token refresh
+      }
+    );
+    return data;
+  } catch (error) {
+    // If refresh fails, return null to trigger logout
+    console.error("Token refresh failed:", error);
+    return null;
+  }
 };
 
 // Function to check if the access token is expired
