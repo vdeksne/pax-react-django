@@ -36,11 +36,11 @@ export default defineConfig({
           }
         },
       },
-      // Optimize chunk size
-      chunkSizeWarningLimit: 1000,
     },
-    // Enable minification and source maps
-    minify: "terser",
+    // Use esbuild for minification (default, faster than terser)
+    minify: "esbuild",
+    // Optimize chunk size warning limit
+    chunkSizeWarningLimit: 1000,
     sourcemap: false, // Disable in production for faster builds
   },
 });
