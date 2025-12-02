@@ -96,8 +96,8 @@ urlpatterns = [
     path('vendor/couriers/', vendor_views.CourierListAPIView.as_view()),
     path('vendor/order-item-detail/<int:pk>/', vendor_views.OrderItemDetailAPIView.as_view()),
 
-    # New registration endpoint
-    path('api/v1/register/', RegisterView.as_view(), name='register'),
+    # New registration endpoint (note: already under api/v1/, so don't repeat it)
+    path('register/', RegisterView.as_view(), name='register'),
 
     # Geocoding endpoint (proxy for Nominatim API to avoid CORS)
     path('geocode/reverse/', GeocodeReverseView.as_view(), name='geocode-reverse'),

@@ -132,6 +132,12 @@ if db_from_env:
     db_host = db_from_env.get('HOST', '')
     if db_host and 'railway.internal' not in db_host:
         # Use PostgreSQL from DATABASE_URL (external/public URL)
+        # Add connection pooling and retry settings for Railway
+        db_from_env['CONN_MAX_AGE'] = 600
+        db_from_env['OPTIONS'] = {
+            'connect_timeout': 10,
+            'options': '-c statement_timeout=30000'
+        }
         DATABASES['default'] = db_from_env
     # If it's an internal hostname, keep using SQLite for local development
 
