@@ -1,15 +1,17 @@
 import "./App.css"; // Importing the CSS file for styling.
 
+import React, { lazy, Suspense } from "react"; // Import React explicitly and lazy/Suspense for code splitting
 import { Route, Routes, BrowserRouter } from "react-router-dom"; // Importing necessary components from 'react-router-dom' for routing.
-import { lazy, Suspense } from "react"; // Import lazy and Suspense for code splitting
 import MainWrapper from "./layouts/MainWrapper"; // Importing the 'MainWrapper' component.
 import PrivateRoute from "./layouts/PrivateRoute"; // Importing the 'PrivateRoute' component.
 import StoreHeader from "./views/base/StoreHeader";
 import StoreFooter from "./views/base/StoreFooter";
 import { CartProvider } from "./views/plugin/Context";
 
-// Lazy load components for better performance
-const Home = lazy(() => import("./views/shop/home"));
+// Import Home eagerly to ensure React is available
+import Home from "./views/shop/home";
+
+// Lazy load other components for better performance
 const Login = lazy(() => import("./views/auth/login"));
 const Logout = lazy(() => import("./views/auth/logout"));
 const Private = lazy(() => import("./views/auth/private"));
@@ -105,7 +107,8 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<Home />} />{" "}
+              {/* Home is eagerly loaded */}
               {/* Authentication Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

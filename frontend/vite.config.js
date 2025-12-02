@@ -17,21 +17,22 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Split vendor chunks for better caching
+          // Simplified chunking to avoid React loading issues
+          // Keep all React-related code together
           if (id.includes("node_modules")) {
-            if (id.includes("react") || id.includes("react-dom")) {
+            // Bundle React ecosystem together to avoid dependency issues
+            if (
+              id.includes("react") ||
+              id.includes("react-dom") ||
+              id.includes("react-router")
+            ) {
               return "react-vendor";
             }
-            if (id.includes("react-router")) {
-              return "router-vendor";
-            }
-            if (id.includes("axios")) {
-              return "axios-vendor";
-            }
+            // Separate large chart library
             if (id.includes("chart.js") || id.includes("react-chartjs")) {
               return "chart-vendor";
             }
-            // Other large dependencies
+            // Keep everything else in one vendor chunk to avoid loading order issues
             return "vendor";
           }
         },
