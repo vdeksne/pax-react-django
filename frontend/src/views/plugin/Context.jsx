@@ -22,6 +22,7 @@ export const CartProvider = ({ children }) => {
   const cart_id = CartID();
   const fetchingRef = useRef(false);
   const lastFetchRef = useRef({ cart_id: null, user_id: null });
+  const abortControllerRef = useRef(null);
 
   // Memoize user_id to prevent unnecessary re-renders
   const userId = useMemo(() => userData?.user_id || null, [userData?.user_id]);
@@ -37,25 +38,53 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       fetchingRef.current = true;
-      setIsLoading(true);
+      // Don't set loading state - cart count is non-critical
       const url = userId
         ? `cart-list/${cart_id}/${userId}/`
         : `cart-list/${cart_id}/`;
-      const response = await axios.get(url, { timeout: 15000 }); // 15 second timeout for cart
-      setCartCount(response.data.length);
-      lastFetchRef.current = { cart_id, user_id: userId };
-    } catch (error) {
-      // Silently handle cart count errors - don't break the app
-      if (error.code !== "ECONNABORTED" && error.code !== "ERR_NETWORK") {
-        console.warn("Error fetching cart count:", error);
+      // Use shorter timeout for cart count (non-critical feature)
+      const response = await axios.get(url, {
+        timeout: 8000, // 8 second timeout
+        signal: abortController.signal,
+      });
+
+      // Only update if request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setCartCount(response.data.length);
+        lastFetchRef.current = { cart_id, user_id: userId };
       }
-      // Keep cart count at 0 if fetch fails
-      setCartCount(0);
+    } catch (error) {
+      // Completely silent on timeout/network/abort errors - cart count is non-critical
+      // Only log unexpected server errors (4xx, 5xx)
+      if (
+        error.response &&
+        error.code !== "ECONNABORTED" &&
+        error.code !== "ERR_NETWORK" &&
+        error.name !== "AbortError" &&
+        error.name !== "CanceledError"
+      ) {
+        console.warn("Error fetching cart count:", error.response.status);
+      }
+      // Keep cart count at 0 if fetch fails - don't break the app
+      if (!abortController.signal.aborted) {
+        setCartCount(0);
+      }
     } finally {
-      setIsLoading(false);
       fetchingRef.current = false;
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null;
+      }
     }
     // Remove axios and isLoading from dependencies to prevent loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,31 +102,23 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
-    // Use a timeout to debounce rapid changes
-    const timeoutId = setTimeout(async () => {
-      if (fetchingRef.current) return;
-
-      try {
-        fetchingRef.current = true;
-        setIsLoading(true);
-        const url = userId
-          ? `cart-list/${cart_id}/${userId}/`
-          : `cart-list/${cart_id}/`;
-        const response = await axios.get(url);
-        setCartCount(response.data.length);
-        lastFetchRef.current = { cart_id, user_id: userId };
-      } catch (error) {
-        console.error("Error fetching cart count:", error);
-      } finally {
-        setIsLoading(false);
-        fetchingRef.current = false;
-      }
+    // Use a timeout to debounce rapid changes and make it non-blocking
+    const timeoutId = setTimeout(() => {
+      // Call fetchCartCount which has proper error handling
+      fetchCartCount();
     }, 300);
 
-    return () => clearTimeout(timeoutId);
-    // Only depend on cart_id and userId
+    return () => {
+      clearTimeout(timeoutId);
+      // Cancel any pending request when component unmounts or dependencies change
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+    // Only depend on cart_id, userId, and fetchCartCount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart_id, userId]);
+  }, [cart_id, userId, fetchCartCount]);
 
   const updateCartCount = useCallback(async () => {
     await fetchCartCount();

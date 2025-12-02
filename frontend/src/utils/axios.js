@@ -32,15 +32,17 @@ apiInstance.interceptors.request.use((config) => {
 apiInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle timeout errors specifically
-    if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
-      console.warn("Request timeout - server may be slow or unreachable");
-      // Don't throw - let individual components handle the error
+    // Silently handle timeout/network errors - let components decide how to handle
+    // Only log in development mode for debugging
+    if (import.meta.env.DEV) {
+      if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+        console.debug("Request timeout:", error.config?.url);
+      }
+      if (error.code === "ERR_NETWORK" || !error.response) {
+        console.debug("Network error:", error.config?.url);
+      }
     }
-    // Handle network errors
-    if (error.code === "ERR_NETWORK" || !error.response) {
-      console.warn("Network error - check backend connection");
-    }
+    // Always reject so components can handle errors appropriately
     return Promise.reject(error);
   }
 );
