@@ -45,6 +45,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'https://pax-connect.netlify.app',
 ]
+# Allow popups for Google OAuth and other third-party services
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
 
