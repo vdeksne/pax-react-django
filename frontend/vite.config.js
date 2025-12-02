@@ -14,30 +14,8 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          // Simplified chunking to avoid React loading issues
-          // Keep all React-related code together
-          if (id.includes("node_modules")) {
-            // Bundle React ecosystem together to avoid dependency issues
-            if (
-              id.includes("react") ||
-              id.includes("react-dom") ||
-              id.includes("react-router")
-            ) {
-              return "react-vendor";
-            }
-            // Separate large chart library
-            if (id.includes("chart.js") || id.includes("react-chartjs")) {
-              return "chart-vendor";
-            }
-            // Keep everything else in one vendor chunk to avoid loading order issues
-            return "vendor";
-          }
-        },
-      },
-    },
+    // Let Vite handle chunking automatically - it knows how to handle React properly
+    // Removing manual chunking to fix React loading issues
     // Use esbuild for minification (default, faster than terser)
     minify: "esbuild",
     // Optimize chunk size warning limit
