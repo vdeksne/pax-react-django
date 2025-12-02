@@ -130,6 +130,8 @@ db_from_env = dj_database_url.config(conn_max_age=600, default=None)
 if db_from_env:
     # Check if it's an internal Railway hostname (won't work locally)
     db_host = db_from_env.get('HOST', '')
+    # On Railway, use PostgreSQL if it's not an internal hostname
+    # Railway provides external hostnames like switchyard.proxy.rlwy.net
     if db_host and 'railway.internal' not in db_host:
         # Use PostgreSQL from DATABASE_URL (external/public URL)
         # Add connection pooling and retry settings for Railway
