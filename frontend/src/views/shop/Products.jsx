@@ -64,8 +64,8 @@ function Products() {
     const fetchAllData = async () => {
       try {
         const [productsRes, categoryRes] = await Promise.all([
-          axios.get("products/"),
-          axios.get("category/"),
+          apiInstance.get("products/"),
+          apiInstance.get("category/"),
         ]);
 
         setProducts(productsRes.data);
@@ -164,7 +164,7 @@ function Products() {
             ? `cart-list/${cart_id}/${currentUserData.user_id}/`
             : `cart-list/${cart_id}/`;
 
-          const response = await axios.get(url);
+          const response = await apiInstance.get(url);
           updateCartCount(response.data.length);
         } catch (error) {
           console.error("Error updating cart count:", error);
