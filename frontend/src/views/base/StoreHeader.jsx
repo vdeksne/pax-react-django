@@ -498,32 +498,36 @@ function StoreHeader() {
                     </li>
                   </ul>
                 </li>
-                <li>
-                  <Link
-                    className="dropdown-item p-0"
-                    to="/register"
-                    onClick={() =>
-                      document
-                        .querySelector(".side-panel")
-                        .classList.remove("show")
-                    }
-                  >
-                    Register
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="dropdown-item p-0"
-                    to="/logout"
-                    onClick={() =>
-                      document
-                        .querySelector(".side-panel")
-                        .classList.remove("show")
-                    }
-                  >
-                    Logout
-                  </Link>
-                </li>
+                {!isLoggedIn() && (
+                  <li>
+                    <Link
+                      className="dropdown-item p-0"
+                      to="/register"
+                      onClick={() =>
+                        document
+                          .querySelector(".side-panel")
+                          .classList.remove("show")
+                      }
+                    >
+                      Register
+                    </Link>
+                  </li>
+                )}
+                {isLoggedIn() && (
+                  <li>
+                    <Link
+                      className="dropdown-item p-0"
+                      to="/logout"
+                      onClick={() =>
+                        document
+                          .querySelector(".side-panel")
+                          .classList.remove("show")
+                      }
+                    >
+                      Logout
+                    </Link>
+                  </li>
+                )}
               </ul>
               <style>
                 {`

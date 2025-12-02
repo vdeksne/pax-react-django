@@ -44,6 +44,12 @@ import OrderItemDetail from "./views/vendor/OrderItemDetail";
 import CategoryProducts from "./views/shop/CategoryProducts";
 import Subscriptions from "./views/shop/Subscriptions";
 import Products from "./views/shop/Products";
+import About from "./views/shop/About";
+import Contact from "./views/shop/Contact";
+import Blog from "./views/shop/Blog";
+import Terms from "./views/shop/Terms";
+import Changelog from "./views/shop/Changelog";
+import CookiePolicy from "./views/shop/CookiePolicy";
 
 function App() {
   // Define the main 'App' component.
@@ -86,6 +92,12 @@ function App() {
             <Route path="/search" element={<Search />} />
             <Route path="/category/:slug" element={<CategoryProducts />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/changelog" element={<Changelog />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
             {/* Customer Routes */}
             <Route
               path="/customer/account/"
