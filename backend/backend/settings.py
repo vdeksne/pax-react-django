@@ -124,9 +124,16 @@ DATABASES = {
     }
 }
 
-
-db_from_env = dj_database_url.config(conn_max_age=600)
-DATABASES['default'].update(db_from_env)
+# Only use Railway PostgreSQL if DATABASE_URL is set and not using internal hostname
+# Internal Railway hostnames (like postgres.railway.internal) only work within Railway's network
+db_from_env = dj_database_url.config(conn_max_age=600, default=None)
+if db_from_env:
+    # Check if it's an internal Railway hostname (won't work locally)
+    db_host = db_from_env.get('HOST', '')
+    if db_host and 'railway.internal' not in db_host:
+        # Use PostgreSQL from DATABASE_URL (external/public URL)
+        DATABASES['default'] = db_from_env
+    # If it's an internal hostname, keep using SQLite for local development
 
 # if os.environ.get("DJANGO_DEVELOPMENT") == "True":
 #     DATABASES = {
@@ -268,7 +275,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://pax-connect.netlify.app",
-    "https://pax-connect.netlify.app/",
 ]
 
 
