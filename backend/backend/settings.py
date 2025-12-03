@@ -252,8 +252,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'userauths.User'
 
-# Site URL
-SITE_URL = env("SITE_URL")
+# Site URL - Use production URL by default, allow override via env var
+# This is critical for Stripe payment redirects
+SITE_URL = env("SITE_URL", default="https://pax-connect.netlify.app")
 
 # Stripe API Keys
 STRIPE_PUBLIC_KEY = env("STRIPE_PUBLIC_KEY")
