@@ -235,36 +235,44 @@ function UpdateProduct() {
 
       // Append specifications data
       specifications?.forEach((specification, index) => {
-        Object.entries(specification).forEach(([key, value]) => {
-          formData.append(`specifications[${index}][${key}]`, value);
-        });
+        // Only send title and content, exclude id and product fields
+        if (specification.title) {
+          formData.append(`specifications[${index}][title]`, specification.title);
+        }
+        if (specification.content) {
+          formData.append(`specifications[${index}][content]`, specification.content);
+        }
       });
 
       colors?.forEach((color, index) => {
-        Object.entries(color).forEach(([key, value]) => {
-          if (
-            key === "image" &&
-            value &&
-            value.file &&
-            value.file.type.startsWith("image/")
-          ) {
-            formData.append(
-              `colors[${index}][${key}]`,
-              value.file,
-              value.file.name
-            );
-          } else {
-            console.log(String(value));
-            formData.append(`colors[${index}][${key}]`, String(value)); // Convert `value` to a string
+        // Only send name, color_code, and image (if new file)
+        // Exclude id and product fields
+        if (color.name) {
+          formData.append(`colors[${index}][name]`, color.name);
+        }
+        if (color.color_code) {
+          formData.append(`colors[${index}][color_code]`, color.color_code);
+        }
+        // Handle image - only if it's a new file upload
+        if (color.image) {
+          if (color.image.file && color.image.file instanceof File) {
+            formData.append(`colors[${index}][image]`, color.image.file);
+          } else if (color.image instanceof File) {
+            formData.append(`colors[${index}][image]`, color.image);
           }
-        });
+          // If it's just a URL string, skip it (existing image, no update needed)
+        }
       });
 
       // Append sizes data
       sizes?.forEach((size, index) => {
-        Object.entries(size).forEach(([key, value]) => {
-          formData.append(`sizes[${index}][${key}]`, value);
-        });
+        // Only send name and price, exclude id and product fields
+        if (size.name) {
+          formData.append(`sizes[${index}][name]`, size.name);
+        }
+        if (size.price !== undefined && size.price !== null) {
+          formData.append(`sizes[${index}][price]`, size.price);
+        }
       });
 
       // Append gallery data
