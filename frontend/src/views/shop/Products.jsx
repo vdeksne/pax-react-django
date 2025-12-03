@@ -69,15 +69,17 @@ function Products() {
 
   // Fetch data in parallel with better error handling
   useEffect(() => {
+    let isMounted = true;
     const fetchAllData = async () => {
       // Always set loading to false after a maximum time to ensure page renders
       const maxLoadTime = setTimeout(() => {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }, 30000); // 30 seconds max - reduced from 70s
 
       try {
         // Use Promise.allSettled to handle partial failures gracefully
-        // Reduced timeouts since we're using pagination now
         const [productsResult, categoryResult] = await Promise.allSettled([
           apiInstance.get("products/", {
             timeout: 15000, // 15s for products (should be fast with pagination)
@@ -86,9 +88,13 @@ function Products() {
               page_size: itemsPerPage,
             },
           }),
-          apiInstance.get("category/", { timeout: 10000 }), // 10s for categories
+          apiInstance.get("category/", { 
+            timeout: 20000, // 20s for categories (increased to prevent cancellation)
+          }),
         ]);
 
+        if (!isMounted) return; // Don't update state if component unmounted
+        
         clearTimeout(maxLoadTime);
 
         // Handle products - now with pagination
@@ -168,11 +174,18 @@ function Products() {
         // Always set empty arrays so page still renders even if API fails
         setProducts([]);
         setCategory([]);
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAllData();
+    
+    // Cleanup function to prevent state updates if component unmounts
+    return () => {
+      isMounted = false;
+    };
   }, [currentPage, itemsPerPage]); // Refetch when page changes
 
   const handleColorButtonClick = (event, product_id, colorName, colorImage) => {

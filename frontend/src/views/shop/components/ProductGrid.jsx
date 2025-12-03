@@ -48,25 +48,53 @@ const ProductGrid = ({
                         const img = e.target;
                         const currentSrc = img.src;
 
-                        // If image failed and it's from media/, try static/ path for backward compatibility
-                        if (
-                          currentSrc &&
-                          currentSrc.includes("/media/") &&
-                          !currentSrc.includes("/static/")
-                        ) {
-                          const staticSrc = currentSrc.replace(
-                            "/media/",
-                            "/static/"
-                          );
-                          // Only try once to avoid infinite loop
-                          if (!img.dataset.triedStatic) {
+                        // Try multiple fallback strategies
+                        if (currentSrc) {
+                          // Strategy 1: If from media/, try static/
+                          if (
+                            currentSrc.includes("/media/") &&
+                            !currentSrc.includes("/static/") &&
+                            !img.dataset.triedStatic
+                          ) {
                             img.dataset.triedStatic = "true";
+                            const staticSrc = currentSrc.replace("/media/", "/static/");
                             img.src = staticSrc;
                             return;
                           }
+                          
+                          // Strategy 2: If from static/, try media/
+                          if (
+                            currentSrc.includes("/static/") &&
+                            !currentSrc.includes("/media/") &&
+                            !img.dataset.triedMedia
+                          ) {
+                            img.dataset.triedMedia = "true";
+                            const mediaSrc = currentSrc.replace("/static/", "/media/");
+                            img.src = mediaSrc;
+                            return;
+                          }
+                          
+                          // Strategy 3: Try removing location prefix entirely (direct S3 path)
+                          if (
+                            (currentSrc.includes("/media/") || currentSrc.includes("/static/")) &&
+                            !img.dataset.triedDirect
+                          ) {
+                            img.dataset.triedDirect = "true";
+                            // Extract just the filename/path after user_1/ or similar
+                            const match = currentSrc.match(/(user_\d+\/.+\.jpg)/);
+                            if (match) {
+                              // Try both media and static with just the relative path
+                              const relativePath = match[1];
+                              const mediaDirect = currentSrc.split('/').slice(0, -1).join('/').replace(/\/media\/|\/static\//, '') + '/media/' + relativePath;
+                              const staticDirect = currentSrc.split('/').slice(0, -1).join('/').replace(/\/media\/|\/static\//, '') + '/static/' + relativePath;
+                              // Try media first
+                              img.src = mediaDirect.includes('/media/') ? mediaDirect : staticDirect;
+                              return;
+                            }
+                          }
                         }
 
-                        // Fallback to placeholder if both paths fail
+                        // Final fallback to placeholder if all strategies fail
                         img.src =
                           "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
                       }}
