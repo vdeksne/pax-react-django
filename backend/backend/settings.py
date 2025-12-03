@@ -279,6 +279,7 @@ SERVER_EMAIL = " viktorijadeksne@gmail.com"
 # CORS Configuration
 # NOTE: CORS_ALLOW_ALL_ORIGINS and CORS_ALLOW_CREDENTIALS cannot both be True
 # If credentials are needed, use CORS_ALLOWED_ORIGINS instead
+# Fixed: Set CORS_ALLOW_CREDENTIALS to False to allow CORS_ALLOW_ALL_ORIGINS to work
 CORS_ALLOW_CREDENTIALS = False  # Set to False since we're not using credentials
 CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins in production
 CORS_ALLOWED_ORIGINS = [
