@@ -1,19 +1,138 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 
 import apiInstance from "../../utils/axios";
 import UserData from "../plugin/UserData";
 import Sidebar from "./Sidebar";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 function AddProduct() {
   const userData = UserData();
+  const location = useLocation();
 
-  // Check if user has a vendor account
-  if (!userData || !userData.vendor_id || userData.vendor_id === 0) {
-    window.location.href = "/vendor/register/";
-    return null;
-  }
+  const redirectCheckedRef = useRef(false);
+  const redirectTimeoutRef = useRef(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [vendorStatusChecked, setVendorStatusChecked] = useState(false);
+  const vendorCheckRef = useRef(false);
+
+  // Extract vendor_id and check for validity
+  const vendorIdValue = userData?.vendor_id;
+  const vendorId =
+    vendorIdValue &&
+    vendorIdValue !== 0 &&
+    vendorIdValue !== "undefined" &&
+    vendorIdValue !== "null"
+      ? vendorIdValue
+      : null;
+
+  // Effect to verify vendor status from backend if token doesn't have it
+  useEffect(() => {
+    if (
+      location.pathname === "/vendor/product/new/" &&
+      userData &&
+      userData.user_id &&
+      !vendorCheckRef.current &&
+      !vendorStatusChecked
+    ) {
+      if (!vendorId || vendorId === 0) {
+        vendorCheckRef.current = true;
+        apiInstance
+          .get(`check-vendor-status/${userData.user_id}/`)
+          .then((response) => {
+            const { has_vendor, vendor_id } = response.data;
+            if (has_vendor && vendor_id) {
+              setIsRedirecting(false);
+              redirectCheckedRef.current = true;
+              setVendorStatusChecked(true);
+              // vendor_id available: could update local token/userData if desired
+            } else {
+              setVendorStatusChecked(true);
+            }
+          })
+          .catch(() => {
+            setVendorStatusChecked(true);
+          });
+      } else {
+        setVendorStatusChecked(true);
+      }
+    }
+  }, [userData, vendorId, location.pathname, vendorStatusChecked]);
+
+  useEffect(() => {
+    if (
+      location.pathname === "/vendor/product/new/" &&
+      vendorId &&
+      vendorId !== 0
+    ) {
+      setIsRedirecting(false);
+      redirectCheckedRef.current = true;
+    }
+  }, [vendorId, location.pathname]);
+
+  useEffect(() => {
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current);
+      redirectTimeoutRef.current = null;
+    }
+
+    if (location.pathname !== "/vendor/product/new/") {
+      redirectCheckedRef.current = false;
+      setIsRedirecting(false);
+      return;
+    }
+
+    if (vendorId && vendorId !== 0) {
+      setIsRedirecting(false);
+      redirectCheckedRef.current = true;
+      return;
+    }
+
+    if (redirectCheckedRef.current) {
+      return;
+    }
+
+    if (userData === undefined) {
+      return;
+    }
+
+    if (!vendorStatusChecked) {
+      return;
+    }
+
+    redirectTimeoutRef.current = setTimeout(() => {
+      if (
+        location.pathname !== "/vendor/product/new/" ||
+        redirectCheckedRef.current
+      ) {
+        return;
+      }
+      if (vendorId && vendorId !== 0) {
+        setIsRedirecting(false);
+        redirectCheckedRef.current = true;
+        return;
+      }
+      if (
+        userData !== null &&
+        userData !== undefined &&
+        (!vendorId || vendorId === 0) &&
+        vendorStatusChecked
+      ) {
+        setIsRedirecting(true);
+        redirectCheckedRef.current = true;
+        window.location.href = "/vendor/register/";
+        return;
+      }
+    }, 300);
+
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, vendorId, vendorStatusChecked, userData]);
 
   const [product, setProduct] = useState({
     title: "",
@@ -26,7 +145,7 @@ function AddProduct() {
     old_price: "",
     shipping_amount: "",
     stock_qty: "",
-    vendor: userData.vendor_id,
+    vendor: vendorId || null,
   });
   const [specifications, setSpecifications] = useState([
     { title: "", content: "" },
@@ -38,13 +157,10 @@ function AddProduct() {
   const [gallery, setGallery] = useState([{ image: null }]);
   const [category, setCategory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const axios = apiInstance;
-  const navigate = useNavigate();
+
   const handleAddMore = (setStateFunction) => {
     setStateFunction((prevState) => [...prevState, {}]);
   };
-
-  console.log(product.category);
 
   const handleRemove = (index, setStateFunction) => {
     setStateFunction((prevState) => {
@@ -64,10 +180,8 @@ function AddProduct() {
 
   const handleImageChange = (index, event, setStateFunction) => {
     const file = event.target.files[0];
-
     if (file) {
       const reader = new FileReader();
-
       reader.onloadend = () => {
         setStateFunction((prevState) => {
           const newState = [...prevState];
@@ -75,24 +189,21 @@ function AddProduct() {
           return newState;
         });
       };
-
       reader.readAsDataURL(file);
     } else {
-      // Handle the case when no file is selected
       setStateFunction((prevState) => {
         const newState = [...prevState];
-        newState[index].image = null; // Set image to null
-        newState[index].preview = null; // Optionally set preview to null
+        newState[index].image = null;
         return newState;
       });
     }
   };
 
   const handleProductInputChange = (event) => {
-    setProduct({
-      ...product,
+    setProduct((prev) => ({
+      ...prev,
       [event.target.name]: event.target.value,
-    });
+    }));
   };
 
   const handleProductFileChange = (event) => {
@@ -100,21 +211,26 @@ function AddProduct() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProduct({
-          ...product,
+        setProduct((prev) => ({
+          ...prev,
           image: {
             file: file,
             preview: reader.result,
           },
-        });
+        }));
       };
       reader.readAsDataURL(file);
+    } else {
+      setProduct((prev) => ({
+        ...prev,
+        image: null,
+      }));
     }
   };
 
   useEffect(() => {
     const fetchCategory = async () => {
-      axios.get("category/").then((res) => {
+      apiInstance.get("category/").then((res) => {
         setCategory(res.data);
       });
     };
@@ -125,14 +241,13 @@ function AddProduct() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Validate required fields
     if (
-      product.title == "" ||
-      product.description == "" ||
-      product.price == "" ||
-      product.category === null ||
-      product.shipping_amount == "" ||
-      product.stock_qty == "" ||
+      product.title === "" ||
+      product.description === "" ||
+      product.price === "" ||
+      !product.category ||
+      product.shipping_amount === "" ||
+      product.stock_qty === "" ||
       product.image === null
     ) {
       setIsLoading(false);
@@ -144,7 +259,6 @@ function AddProduct() {
       return;
     }
 
-    // Validate image size (max 2MB)
     if (
       product.image &&
       product.image.file &&
@@ -162,23 +276,14 @@ function AddProduct() {
     try {
       const formData = new FormData();
 
-      // Log the product data before sending
-      console.log("Product data being sent:", {
-        ...product,
-        image: product.image ? "Image file present" : "No image",
-      });
-
-      // Append product data
       Object.entries(product).forEach(([key, value]) => {
         if (key === "image" && value && value.file) {
-          console.log("Appending image file:", value.file);
           formData.append("image", value.file);
         } else if (key !== "image") {
           formData.append(key, value);
         }
       });
 
-      // Only append non-empty specifications
       specifications
         .filter((spec) => spec.title && spec.content)
         .forEach((specification, index) => {
@@ -187,7 +292,6 @@ function AddProduct() {
           });
         });
 
-      // Only append non-empty colors
       colors
         .filter((color) => color.name && color.color_code)
         .forEach((color, index) => {
@@ -200,7 +304,6 @@ function AddProduct() {
           });
         });
 
-      // Only append non-empty sizes
       sizes
         .filter((size) => size.name && size.price > 0)
         .forEach((size, index) => {
@@ -209,33 +312,29 @@ function AddProduct() {
           });
         });
 
-      // Only append non-empty gallery images
       gallery
         .filter((item) => item.image && item.image.file)
         .forEach((item, index) => {
           formData.append(`gallery[${index}][image]`, item.image.file);
         });
 
-      // Log the FormData contents
-      for (let pair of formData.entries()) {
-        console.log(
-          pair[0] + ": " + (pair[1] instanceof File ? pair[1].name : pair[1])
-        );
-      }
-
-      // Validate vendor_id before making the request
-      if (!userData?.vendor_id || userData.vendor_id === 0) {
+      if (
+        !vendorId ||
+        vendorId === 0 ||
+        vendorId === "undefined" ||
+        vendorId === "null"
+      ) {
         Swal.fire({
           icon: "error",
           title: "Vendor Account Required",
           text: "You need to register as a vendor before creating products.",
         });
-        navigate("/vendor/register/");
+        window.location.href = "/vendor/register/";
         return;
       }
 
       const response = await apiInstance.post(
-        `vendor-product-create/${userData.vendor_id}/`,
+        `vendor-product-create/${vendorId}/`,
         formData,
         {
           headers: {
@@ -250,13 +349,9 @@ function AddProduct() {
           title: "Product Created Successfully",
           text: "This product has been successfully created",
         });
-        navigate("/vendor/products/");
+        window.location.href = "/vendor/products/";
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
-      console.log("Full error response:", error.response);
-
-      // Extract error message from different possible response formats
       let errorMessage = "Failed to create product. Please try again.";
       if (error.response?.data) {
         if (Array.isArray(error.response.data)) {
@@ -271,7 +366,6 @@ function AddProduct() {
             errorMessage;
         }
       }
-
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -282,12 +376,19 @@ function AddProduct() {
     }
   };
 
+  if (isRedirecting) {
+    return null;
+  }
+
+  if (!vendorId && vendorStatusChecked && userData) {
+    return null;
+  }
+
   return (
     <div>
       <div className="container-fluid" id="main">
         <div className="row row-offcanvas row-offcanvas-left h-100">
           <Sidebar />
-          {/*/col*/}
           <div className="col-md-9 col-lg-10 main mt-4">
             <div className="container">
               <form
@@ -334,10 +435,9 @@ function AddProduct() {
                               )}
 
                               <div className="mt-3">
-                                {product.title !== "" && (
+                                {product.title !== "" ? (
                                   <h4 className="text-dark">{product.title}</h4>
-                                )}
-                                {product.title === "" && (
+                                ) : (
                                   <h4 className="text-dark">Product Title</h4>
                                 )}
                               </div>
@@ -345,7 +445,6 @@ function AddProduct() {
                           </div>
                         </div>
                       </div>
-
                       <div className="col-md-8">
                         <div className="card mb-3">
                           <div className="card-body">
@@ -388,21 +487,6 @@ function AddProduct() {
                                   value={product.description || ""}
                                   onChange={handleProductInputChange}
                                 />
-                                {/* <CKEditor
-                                                                    editor={ClassicEditor}
-                                                                    data="<p>Hello from CKEditor&nbsp;5!</p>"
-                                                                    onReady={editor => {
-                                                                        // You can store the "editor" and use when it is needed.
-                                                                        console.log('Editor is ready to use!', editor);
-                                                                    }}
-                                                                    onChange={(event) => handleProductInputChange()}
-                                                                    onBlur={(event, editor) => {
-                                                                        console.log('Blur.', editor);
-                                                                    }}
-                                                                    onFocus={(event, editor) => {
-                                                                        console.log('Focus.', editor);
-                                                                    }}
-                                                                /> */}
                               </div>
                               <div className="col-lg-6 mb-2">
                                 <label htmlFor="" className="mb-2">
@@ -499,7 +583,7 @@ function AddProduct() {
                                   style={{ fontSize: 12 }}
                                   className="text-muted"
                                 >
-                                  NOTE: Seperate tags with comma
+                                  NOTE: Separate tags with comma
                                 </span>
                               </div>
                             </div>
@@ -519,13 +603,14 @@ function AddProduct() {
                       <div className="col-md-12">
                         <div className="card mb-3">
                           <div className="card-body">
+                            {gallery.length < 1 && <h4>No Images Selected</h4>}
                             {gallery.map((item, index) => (
                               <div
                                 key={`gallery-${index}`}
                                 className="row text-dark mb-5"
                               >
                                 <div className="col-lg-3">
-                                  {item.image && (
+                                  {item.image && item.image.preview && (
                                     <img
                                       src={item.image.preview}
                                       alt={`Preview for gallery item ${
@@ -539,7 +624,6 @@ function AddProduct() {
                                       }}
                                     />
                                   )}
-
                                   {!item.image && (
                                     <img
                                       src="https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png"
@@ -582,9 +666,6 @@ function AddProduct() {
                                 </div>
                               </div>
                             ))}
-
-                            {gallery < 1 && <h4>No Images Selected</h4>}
-
                             <button
                               type="button"
                               onClick={() => handleAddMore(setGallery)}
@@ -608,6 +689,9 @@ function AddProduct() {
                       <div className="col-md-12">
                         <div className="card mb-3">
                           <div className="card-body">
+                            {specifications.length < 1 && (
+                              <h4>No Specification Form</h4>
+                            )}
                             {specifications.map((specification, index) => (
                               <div
                                 key={`spec-${index}`}
@@ -662,11 +746,6 @@ function AddProduct() {
                                 </div>
                               </div>
                             ))}
-
-                            {specifications.length < 1 && (
-                              <h4>No Specification Form</h4>
-                            )}
-
                             <button
                               type="button"
                               onClick={() => handleAddMore(setSpecifications)}
@@ -680,7 +759,6 @@ function AddProduct() {
                       </div>
                     </div>
                   </div>
-
                   <div
                     className="tab-pane fade"
                     id="pills-size"
@@ -692,6 +770,7 @@ function AddProduct() {
                       <div className="col-md-12">
                         <div className="card mb-3">
                           <div className="card-body">
+                            {sizes.length < 1 && <h4>No Size Added</h4>}
                             {sizes.map((s, index) => (
                               <div
                                 key={`size-${index}`}
@@ -752,7 +831,6 @@ function AddProduct() {
                                 </div>
                               </div>
                             ))}
-                            {sizes < 1 && <h4>No Size Added</h4>}
                             <button
                               type="button"
                               onClick={() => handleAddMore(setSizes)}
@@ -776,6 +854,7 @@ function AddProduct() {
                       <div className="col-md-12">
                         <div className="card mb-3">
                           <div className="card-body">
+                            {colors.length < 1 && <h4>No Colors Added</h4>}
                             {colors.map((c, index) => (
                               <div
                                 key={`color-${index}`}
@@ -837,12 +916,11 @@ function AddProduct() {
                                     }
                                   />
                                 </div>
-
                                 <div className="col-lg-3 mt-2">
-                                  {c.image && (
+                                  {c.image && c.image.preview ? (
                                     <img
                                       src={c.image.preview}
-                                      alt={`Preview for gallery item ${
+                                      alt={`Preview for color item ${
                                         index + 1
                                       }`}
                                       style={{
@@ -852,11 +930,10 @@ function AddProduct() {
                                         borderRadius: 5,
                                       }}
                                     />
-                                  )}
-                                  {!c.image && (
+                                  ) : (
                                     <img
                                       src="https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png"
-                                      alt={`Preview for gallery item ${
+                                      alt={`Preview for color item ${
                                         index + 1
                                       }`}
                                       style={{
@@ -868,7 +945,6 @@ function AddProduct() {
                                     />
                                   )}
                                 </div>
-
                                 <div className="col-lg-2 mt-2">
                                   <button
                                     type="button"
@@ -882,9 +958,6 @@ function AddProduct() {
                                 </div>
                               </div>
                             ))}
-
-                            {colors < 1 && <h4>No Colors Added</h4>}
-
                             <button
                               type="button"
                               onClick={() => handleAddMore(setColors)}
@@ -975,13 +1048,11 @@ function AddProduct() {
                       </li>
                     </ul>
                     <div className="d-flex justify-content-center mb-5">
-                      {isLoading === false && (
+                      {!isLoading ? (
                         <button type="submit" className="btn-main-pricing">
                           Create Product
                         </button>
-                      )}
-
-                      {isLoading === true && (
+                      ) : (
                         <button disabled className="btn-main-pricing">
                           Creating... <i className="fa fa-spinner fa-spin" />{" "}
                         </button>
