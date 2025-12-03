@@ -99,7 +99,11 @@ function Checkout() {
   };
 
   const payWithStripe = (event) => {
+    event.preventDefault();
     setPaymentLoading(true);
+
+    // Submit the form to redirect to Stripe checkout
+    // The backend will create a Stripe checkout session and redirect
     event.target.form.submit();
   };
 
@@ -432,20 +436,52 @@ function Checkout() {
                     )}
 
                     {paymentLoading === false && (
-                      <form
-                        action={`${API_BASE_URL}stripe-checkout/${
-                          param?.order_oid || ""
-                        }/`}
-                        method="POST"
-                      >
-                        <button
-                          onClick={payWithStripe}
-                          type="submit"
-                          className="btn-main-pricing d w-100 mt-2"
+                      <div>
+                        <form
+                          action={`${API_BASE_URL}stripe-checkout/${
+                            param?.order_oid || ""
+                          }/`}
+                          method="POST"
                         >
-                          Pay Now (Stripe)
-                        </button>
-                      </form>
+                          <button
+                            onClick={payWithStripe}
+                            type="submit"
+                            className="btn-main-pricing d w-100 mt-2"
+                          >
+                            Pay Now (Stripe)
+                          </button>
+                        </form>
+                        <div
+                          className="alert alert-warning mt-2"
+                          style={{ fontSize: "0.85rem" }}
+                        >
+                          <i className="fas fa-exclamation-triangle"></i>{" "}
+                          <strong>Payment not working?</strong> If you see
+                          connection errors, please:
+                          <ul
+                            style={{
+                              marginTop: "8px",
+                              marginBottom: "0",
+                              paddingLeft: "20px",
+                            }}
+                          >
+                            <li>
+                              Disable ad blockers (uBlock Origin, AdBlock Plus,
+                              etc.)
+                            </li>
+                            <li>
+                              Disable privacy extensions that block third-party
+                              scripts
+                            </li>
+                            <li>
+                              Allow Stripe domains in your browser settings
+                            </li>
+                            <li>
+                              Try using a different browser or incognito mode
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
                     )}
 
                     <PayPalScriptProvider options={initialOptions}>
