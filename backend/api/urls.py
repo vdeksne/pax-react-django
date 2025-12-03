@@ -15,6 +15,7 @@ urlpatterns = [
     path('user/token/', userauths_views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('user/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('user/register/', userauths_views.RegisterView.as_view(), name='auth_register'),
+    # Google OAuth endpoint - handles Google Sign-In authentication
     path('user/google-auth/', userauths_views.GoogleAuthView.as_view(), name='google_auth'),
     path('user/profile/<user_id>/', userauths_views.ProfileView.as_view(), name='user_profile'),
     path('user/test/', userauths_views.testEndPoint, name='auth_register'),
