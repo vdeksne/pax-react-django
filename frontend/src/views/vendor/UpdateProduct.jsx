@@ -259,8 +259,19 @@ function UpdateProduct() {
       const data = await response.json();
     } catch (error) {
       console.error('Error submitting form:', error);
-      setIsLoading(false)
-
+      setIsLoading(false);
+      
+      // Show detailed error message to user
+      const errorMessage = error.response?.data?.errors 
+        ? JSON.stringify(error.response.data.errors, null, 2)
+        : error.response?.data?.error || error.message || 'Failed to update product';
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Update Failed',
+        text: errorMessage,
+        footer: error.response?.data?.detail || ''
+      });
     }
   };
 
