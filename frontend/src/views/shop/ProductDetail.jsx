@@ -270,18 +270,25 @@ function ProductDetail() {
                             onError={(e) => {
                               const img = e.target;
                               const currentSrc = img.src;
-                              
+
                               // If image failed and it's from media/, try static/ path for backward compatibility
-                              if (currentSrc && currentSrc.includes('/media/') && !currentSrc.includes('/static/')) {
-                                const staticSrc = currentSrc.replace('/media/', '/static/');
+                              if (
+                                currentSrc &&
+                                currentSrc.includes("/media/") &&
+                                !currentSrc.includes("/static/")
+                              ) {
+                                const staticSrc = currentSrc.replace(
+                                  "/media/",
+                                  "/static/"
+                                );
                                 // Only try once to avoid infinite loop
                                 if (!img.dataset.triedStatic) {
-                                  img.dataset.triedStatic = 'true';
+                                  img.dataset.triedStatic = "true";
                                   img.src = staticSrc;
                                   return;
                                 }
                               }
-                              
+
                               // Fallback to placeholder if both paths fail
                               img.src =
                                 "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
@@ -298,18 +305,25 @@ function ProductDetail() {
                             onError={(e) => {
                               const img = e.target;
                               const currentSrc = img.src;
-                              
+
                               // If image failed and it's from media/, try static/ path for backward compatibility
-                              if (currentSrc && currentSrc.includes('/media/') && !currentSrc.includes('/static/')) {
-                                const staticSrc = currentSrc.replace('/media/', '/static/');
+                              if (
+                                currentSrc &&
+                                currentSrc.includes("/media/") &&
+                                !currentSrc.includes("/static/")
+                              ) {
+                                const staticSrc = currentSrc.replace(
+                                  "/media/",
+                                  "/static/"
+                                );
                                 // Only try once to avoid infinite loop
                                 if (!img.dataset.triedStatic) {
-                                  img.dataset.triedStatic = 'true';
+                                  img.dataset.triedStatic = "true";
                                   img.src = staticSrc;
                                   return;
                                 }
                               }
-                              
+
                               // Fallback to placeholder if both paths fail
                               img.src =
                                 "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
