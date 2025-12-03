@@ -368,18 +368,18 @@ function Dashboard() {
   }
 
   // Data processing (not hooks, so this is fine)
-  const order_months = orderChartData?.map((item) => item.month);
-  const order_counts = orderChartData?.map((item) => item.orders);
+  const order_months = orderChartData?.map((item) => item.month) || [];
+  const order_counts = orderChartData?.map((item) => item.orders) || [];
 
-  const product_labels = productsChartData?.map((item) => item.month);
-  const product_count = productsChartData?.map((item) => item.orders);
+  const product_labels = productsChartData?.map((item) => item.month) || [];
+  const product_count = productsChartData?.map((item) => item.orders) || [];
 
   const order_data = {
-    labels: order_months,
+    labels: order_months.length > 0 ? order_months : ["No Data"],
     datasets: [
       {
         label: "Total Orders",
-        data: order_counts,
+        data: order_counts.length > 0 ? order_counts : [0],
         fill: true,
         backgroundColor: "rgba(75,192,192,0.2)",
         borderColor: "rgba(75,192,192,1)",
@@ -388,11 +388,11 @@ function Dashboard() {
   };
 
   const product_data = {
-    labels: product_labels,
+    labels: product_labels.length > 0 ? product_labels : ["No Data"],
     datasets: [
       {
         label: "Total Products",
-        data: product_count,
+        data: product_count.length > 0 ? product_count : [0],
         fill: true,
         backgroundColor: "#ba9ede",
         borderColor: "#6100e0",
@@ -487,14 +487,70 @@ function Dashboard() {
             <div className="col-lg-6 ">
               <div className="card overflow-hidden">
                 <div className="card-body">
-                  <Line data={order_data} style={{ height: 300 }} />
+                  {orderChartData && orderChartData.length > 0 ? (
+                    <Line
+                      data={order_data}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                          x: {
+                            beginAtZero: true,
+                          },
+                          y: {
+                            beginAtZero: true,
+                          },
+                        },
+                      }}
+                      style={{ height: 300 }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        height: 300,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <p>No order data available</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             <div className="col-lg-6">
               <div className="card overflow-hidden">
                 <div className="card-body">
-                  <Line data={product_data} style={{ height: 300 }} />
+                  {productsChartData && productsChartData.length > 0 ? (
+                    <Line
+                      data={product_data}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                          x: {
+                            beginAtZero: true,
+                          },
+                          y: {
+                            beginAtZero: true,
+                          },
+                        },
+                      }}
+                      style={{ height: 300 }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        height: 300,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <p>No product data available</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
