@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'import_export',
     'anymail',
     'storages',
+    'tinymce',
 
 
 ]

@@ -74,9 +74,18 @@ function Register() {
       if (window.google && window.google.accounts && googleButtonRef.current) {
         const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+        // Debug: Log client ID status (only in development)
+        if (import.meta.env.DEV) {
+          console.log("Google Client ID:", clientId ? "Found" : "NOT FOUND");
+          console.log("Current Origin:", window.location.origin);
+        }
+
         if (!clientId) {
-          console.warn(
-            "Google Client ID not found. Please set VITE_GOOGLE_CLIENT_ID in your .env file"
+          console.error(
+            "Google Client ID not found. Please set VITE_GOOGLE_CLIENT_ID in your environment variables."
+          );
+          console.error(
+            "For local: Set in .env file. For production: Set in Netlify environment variables and redeploy."
           );
           return;
         }
