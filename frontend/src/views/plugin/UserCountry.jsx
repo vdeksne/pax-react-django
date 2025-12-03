@@ -134,28 +134,9 @@ function GetCurrentAddress() {
                   // Don't throw - continue to direct API call fallback
                 }
 
-                // Fallback: Try direct Nominatim API call (may fail due to CORS)
-                // Note: This will likely fail in browser due to CORS policy
-                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-                const response = await fetch(url, {
-                  headers: {
-                    "User-Agent": "YourAppName/1.0", // Nominatim requires User-Agent
-                  },
-                });
-
-                if (!response.ok) {
-                  throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                if (data && data.address) {
-                  // Extract country from the address object
-                  const country =
-                    data.address.country ||
-                    data.address.country_code?.toUpperCase() ||
-                    "";
-                  return country;
-                }
+                // Skip direct Nominatim API call - it will always fail due to CORS
+                // The backend proxy is the only way to get geocoding data
+                // If backend proxy fails, just return empty string (non-critical feature)
                 return "";
               } catch (error) {
                 // Handle CORS and other errors gracefully

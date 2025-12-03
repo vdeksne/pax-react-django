@@ -23,6 +23,7 @@ function Products() {
   const [category, setCategory] = useState([]);
   const [loadingStates, setLoadingStates] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const axios = apiInstance;
   const currentAddress = GetCurrentAddress();
@@ -62,6 +63,11 @@ function Products() {
   // Fetch data in parallel with better error handling
   useEffect(() => {
     const fetchAllData = async () => {
+      // Always set loading to false after a maximum time to ensure page renders
+      const maxLoadTime = setTimeout(() => {
+        setLoading(false);
+      }, 25000); // 25 seconds max - ensure page always renders
+
       try {
         // Use Promise.allSettled to handle partial failures gracefully
         // Use shorter timeout for categories (non-critical)
@@ -70,33 +76,62 @@ function Products() {
           apiInstance.get("category/", { timeout: 10000 }), // 10s for categories
         ]);
 
+        clearTimeout(maxLoadTime);
+
         // Handle products
         if (productsResult.status === "fulfilled") {
-          setProducts(productsResult.value.data);
+          setProducts(productsResult.value.data || []);
+          setError(null);
         } else {
-          // Only log in development - categories/products are non-critical
+          // Log error details in development
           if (import.meta.env.DEV) {
             console.warn("Failed to load products:", productsResult.reason);
           }
-          setProducts([]); // Set empty array so page still renders
+          // Set error message for user feedback
+          const errorReason = productsResult.reason;
+          if (errorReason?.code === "ECONNABORTED") {
+            setError(
+              "Products are taking longer than expected to load. Please refresh the page."
+            );
+          } else if (errorReason?.response?.status === 404) {
+            setError(
+              "Products endpoint not found. Please check backend configuration."
+            );
+          } else if (errorReason?.code === "ERR_NETWORK") {
+            setError(
+              "Unable to connect to server. Please check your connection."
+            );
+          } else {
+            setError(
+              "Failed to load products. Please try refreshing the page."
+            );
+          }
+          setProducts([]);
         }
 
         // Handle categories
         if (categoryResult.status === "fulfilled") {
-          setCategory(categoryResult.value.data);
+          setCategory(categoryResult.value.data || []);
         } else {
           // Silently handle category loading failures - non-critical feature
-          // Only log in development mode
           if (import.meta.env.DEV) {
             console.warn("Failed to load categories:", categoryResult.reason);
           }
-          setCategory([]); // Set empty array so page still renders
+          setCategory([]);
         }
 
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching data:", error);
-        // Set empty arrays so page still renders even if API fails
+        clearTimeout(maxLoadTime);
+        // Log full error in development
+        if (import.meta.env.DEV) {
+          console.error("Error fetching data:", error);
+        }
+        // Set user-friendly error message
+        setError(
+          "An unexpected error occurred. Please try refreshing the page."
+        );
+        // Always set empty arrays so page still renders even if API fails
         setProducts([]);
         setCategory([]);
         setLoading(false);
@@ -229,59 +264,102 @@ function Products() {
         <div className="min-h-screen">
           <main className="mt-1 d-flex flex-column justify-content-center align-items-center">
             <div className="container-products">
+              {/* Error message display */}
+              {error && (
+                <div
+                  className="alert alert-warning alert-dismissible fade show"
+                  role="alert"
+                  style={{
+                    margin: "20px auto",
+                    maxWidth: "800px",
+                    textAlign: "center",
+                  }}
+                >
+                  <strong>⚠️ {error}</strong>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setError(null)}
+                    aria-label="Close"
+                  ></button>
+                </div>
+              )}
+
+              {/* Show message if no products */}
+              {!error && products.length === 0 && (
+                <div
+                  className="alert alert-info"
+                  style={{
+                    margin: "20px auto",
+                    maxWidth: "800px",
+                    textAlign: "center",
+                  }}
+                >
+                  <strong>No products available at the moment.</strong>
+                  <br />
+                  <small>
+                    Please check back later or contact support if this persists.
+                  </small>
+                </div>
+              )}
+
               <Suspense fallback={<div>Loading...</div>}>
                 <HeroSection userData={userData} />
                 <CategoryList categories={category} />
-                <ProductGrid
-                  currentItems={currentItems}
-                  handleColorButtonClick={handleColorButtonClick}
-                  handleSizeButtonClick={handleSizeButtonClick}
-                  handleQtyChange={handleQtyChange}
-                  handleAddToCart={handleAddToCart}
-                  handleAddToWishlist={handleAddToWishlist}
-                  selectedProduct={selectedProduct}
-                  colorImage={colorImage}
-                  selectedColors={selectedColors}
-                  selectedSize={selectedSize}
-                  qtyValue={qtyValue}
-                  loadingStates={loadingStates}
-                />
+                {products.length > 0 && (
+                  <ProductGrid
+                    currentItems={currentItems}
+                    handleColorButtonClick={handleColorButtonClick}
+                    handleSizeButtonClick={handleSizeButtonClick}
+                    handleQtyChange={handleQtyChange}
+                    handleAddToCart={handleAddToCart}
+                    handleAddToWishlist={handleAddToWishlist}
+                    selectedProduct={selectedProduct}
+                    colorImage={colorImage}
+                    selectedColors={selectedColors}
+                    selectedSize={selectedSize}
+                    qtyValue={qtyValue}
+                    loadingStates={loadingStates}
+                  />
+                )}
               </Suspense>
 
-              {/* Pagination */}
-              <nav className="d-flex justify-content-center align-items-center gap-2 flex-wrap mt-4">
-                <button
-                  className="btn-main-pricing-pagination"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </button>
+              {/* Pagination - only show if there are products */}
+              {products.length > 0 && totalPages > 1 && (
+                <nav className="d-flex justify-content-center align-items-center gap-2 flex-wrap mt-4">
+                  <button
+                    className="btn-main-pricing-pagination"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </button>
 
-                <div className="d-flex gap-1 flex-wrap justify-content-center">
-                  {pageNumbers.map((number) => (
-                    <button
-                      key={number}
-                      className={`btn-main-pricing-pagination ${
-                        currentPage === number
-                          ? "btn-main-pricing-pagination"
-                          : "btn-main-pricing-pagination"
-                      }`}
-                      onClick={() => setCurrentPage(number)}
-                    >
-                      {number}
-                    </button>
-                  ))}
-                </div>
+                  <div className="d-flex gap-1 flex-wrap justify-content-center">
+                    {pageNumbers.map((number) => (
+                      <button
+                        key={number}
+                        className={`btn-main-pricing-pagination ${
+                          currentPage === number
+                            ? "btn-main-pricing-pagination"
+                            : "btn-main-pricing-pagination"
+                        }`}
+                        onClick={() => setCurrentPage(number)}
+                      >
+                        {number}
+                      </button>
+                    ))}
+                  </div>
 
-                <button
-                  className="btn-main-pricing-pagination"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </button>
-              </nav>
+                  <button
+                    className="btn-main-pricing-pagination"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </button>
+                </nav>
+              )}
 
               <div className="text-center mt-4">
                 <p className="text-muted gotham-light">
