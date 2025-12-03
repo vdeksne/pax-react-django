@@ -45,8 +45,22 @@ const ProductGrid = ({
                       loading="lazy"
                       decoding="async"
                       onError={(e) => {
-                        // Fallback to placeholder if image fails to load
-                        e.target.src =
+                        const img = e.target;
+                        const currentSrc = img.src;
+                        
+                        // If image failed and it's from media/, try static/ path for backward compatibility
+                        if (currentSrc && currentSrc.includes('/media/') && !currentSrc.includes('/static/')) {
+                          const staticSrc = currentSrc.replace('/media/', '/static/');
+                          // Only try once to avoid infinite loop
+                          if (!img.dataset.triedStatic) {
+                            img.dataset.triedStatic = 'true';
+                            img.src = staticSrc;
+                            return;
+                          }
+                        }
+                        
+                        // Fallback to placeholder if both paths fail
+                        img.src =
                           "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
                       }}
                     />
