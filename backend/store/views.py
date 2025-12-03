@@ -21,10 +21,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 # Serializers
 from userauths.serializer import MyTokenObtainPairSerializer, RegisterSerializer
-from store.serializers import CancelledOrderSerializer, CartSerializer, CartOrderItemSerializer, CouponUsersSerializer, ProductSerializer, TagSerializer ,CategorySerializer, DeliveryCouriersSerializer, CartOrderSerializer, GallerySerializer, BrandSerializer, ProductFaqSerializer, ReviewSerializer,  SpecificationSerializer, CouponSerializer, ColorSerializer, SizeSerializer, AddressSerializer, WishlistSerializer, ConfigSettingsSerializer
+from store.serializers import CancelledOrderSerializer, CartSerializer, CartOrderItemSerializer, CouponUsersSerializer, ProductSerializer, ProductListSerializer, TagSerializer ,CategorySerializer, DeliveryCouriersSerializer, CartOrderSerializer, GallerySerializer, BrandSerializer, ProductFaqSerializer, ReviewSerializer,  SpecificationSerializer, CouponSerializer, ColorSerializer, SizeSerializer, AddressSerializer, WishlistSerializer, ConfigSettingsSerializer
 
 # Models
 from userauths.models import User
@@ -76,8 +77,17 @@ class ConfigSettingsDetailView(generics.RetrieveAPIView):
 
 class CategoryListView(generics.ListAPIView):
     serializer_class = CategorySerializer
-    queryset = Category.objects.filter(active=True)
     permission_classes = (AllowAny,)
+    
+    def get_queryset(self):
+        # Optimize category queries - categories are usually small, but still optimize
+        return Category.objects.filter(active=True).only('id', 'title', 'image', 'slug', 'active')
+    
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        # Add cache headers - categories don't change often
+        response['Cache-Control'] = 'public, max-age=600'  # Cache for 10 minutes
+        return response
 
 
 class BrandListView(generics.ListAPIView):
@@ -86,14 +96,54 @@ class BrandListView(generics.ListAPIView):
     permission_classes = (AllowAny,)
 
 class FeaturedProductListView(generics.ListAPIView):
-    serializer_class = ProductSerializer
-    queryset = Product.objects.filter(status="published", featured=True)[:3]
+    serializer_class = ProductListSerializer  # Use lightweight serializer
     permission_classes = (AllowAny,)
+    
+    def get_queryset(self):
+        # Optimize featured products query
+        return Product.objects.filter(status="published", featured=True).select_related(
+            'category', 'vendor'
+        ).order_by('-date')[:3]
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 class ProductListView(generics.ListAPIView):
-    serializer_class = ProductSerializer
-    queryset = Product.objects.filter(status="published")
+    serializer_class = ProductListSerializer  # Use lightweight serializer for list
     permission_classes = (AllowAny,)
+    pagination_class = StandardResultsSetPagination
+    
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        # Add cache headers to reduce server load
+        response['Cache-Control'] = 'public, max-age=300'  # Cache for 5 minutes
+        return response
+    
+    def get_queryset(self):
+        from django.db.models import Avg, Count, Q
+        from store.models import Review, CartOrderItem
+        
+        # Optimize queries with select_related for ForeignKey relationships
+        # Note: brand is CharField, not ForeignKey, so no select_related needed
+        # Add annotations to avoid N+1 queries for ratings and order counts
+        queryset = Product.objects.filter(status="published").select_related(
+            'category',  # ForeignKey
+            'vendor'     # ForeignKey
+        ).annotate(
+            # Pre-calculate average rating to avoid N+1 queries
+            avg_rating=Avg('reviews__rating'),
+            # Pre-calculate rating count
+            rating_count_annotated=Count('reviews', distinct=True),
+            # Pre-calculate order count for paid orders
+            order_count_annotated=Count(
+                'order_item',
+                filter=Q(order_item__order__payment_status='paid'),
+                distinct=True
+            )
+        ).order_by('-date')  # Order by date for consistent pagination
+        return queryset
 
 class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductSerializer

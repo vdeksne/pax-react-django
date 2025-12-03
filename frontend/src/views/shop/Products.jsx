@@ -24,6 +24,7 @@ function Products() {
   const [loadingStates, setLoadingStates] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [totalCount, setTotalCount] = useState(0); // For backend pagination
 
   const axios = apiInstance;
   const currentAddress = GetCurrentAddress();
@@ -54,10 +55,16 @@ function Products() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = products.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  // With backend pagination, products are already paginated
+  // No need to slice - backend returns only the current page
+  const currentItems = products;
+  // Use totalCount from backend if available, otherwise fallback to products.length
+  const totalPages =
+    totalCount > 0
+      ? Math.ceil(totalCount / itemsPerPage)
+      : products.length > 0
+      ? Math.ceil(products.length / itemsPerPage)
+      : 1;
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   // Fetch data in parallel with better error handling
@@ -66,21 +73,39 @@ function Products() {
       // Always set loading to false after a maximum time to ensure page renders
       const maxLoadTime = setTimeout(() => {
         setLoading(false);
-      }, 70000); // 70 seconds max - ensure page always renders (longer than API timeout)
+      }, 30000); // 30 seconds max - reduced from 70s
 
       try {
         // Use Promise.allSettled to handle partial failures gracefully
-        // Increased timeouts to allow backend more time to respond
+        // Reduced timeouts since we're using pagination now
         const [productsResult, categoryResult] = await Promise.allSettled([
-          apiInstance.get("products/", { timeout: 60000 }), // 60s for products
-          apiInstance.get("category/", { timeout: 60000 }), // 60s for categories
+          apiInstance.get("products/", {
+            timeout: 15000, // 15s for products (should be fast with pagination)
+            params: {
+              page: currentPage,
+              page_size: itemsPerPage,
+            },
+          }),
+          apiInstance.get("category/", { timeout: 10000 }), // 10s for categories
         ]);
 
         clearTimeout(maxLoadTime);
 
-        // Handle products
+        // Handle products - now with pagination
         if (productsResult.status === "fulfilled") {
-          setProducts(productsResult.value.data || []);
+          const response = productsResult.value;
+          // Backend pagination returns { results: [...], count: total, next: url, previous: url }
+          if (response.data.results) {
+            setProducts(response.data.results || []);
+            // Update total count for pagination
+            if (response.data.count !== undefined) {
+              setTotalCount(response.data.count);
+            }
+          } else {
+            // Fallback for non-paginated response (backward compatibility)
+            setProducts(response.data || []);
+            setTotalCount(response.data?.length || 0);
+          }
           setError(null);
         } else {
           // Log error details in development
@@ -148,7 +173,7 @@ function Products() {
     };
 
     fetchAllData();
-  }, []);
+  }, [currentPage, itemsPerPage]); // Refetch when page changes
 
   const handleColorButtonClick = (event, product_id, colorName, colorImage) => {
     setColorValue(colorName);
@@ -376,8 +401,8 @@ function Products() {
                 </p>
                 {totalPages > 1 && (
                   <p className="text-muted gotham-light">
-                    Showing <b>{itemsPerPage}</b> of <b>{products?.length}</b>{" "}
-                    records
+                    Showing <b>{products?.length || 0}</b> of{" "}
+                    <b>{totalCount || products?.length || 0}</b> records
                   </p>
                 )}
               </div>

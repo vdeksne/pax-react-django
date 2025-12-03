@@ -41,6 +41,8 @@ const ProductGrid = ({
                       objectFit: "cover",
                     }}
                     alt={product.title}
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       // Fallback to placeholder if image fails to load
                       e.target.src =

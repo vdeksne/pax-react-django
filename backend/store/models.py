@@ -274,6 +274,12 @@ class Product(models.Model):
     class Meta:
         ordering = ['-id']
         verbose_name_plural = "Products"
+        indexes = [
+            models.Index(fields=['status', 'featured']),  # For filtering published/featured products
+            models.Index(fields=['status', '-date']),      # For ordering published products by date
+            models.Index(fields=['slug']),                 # For product detail lookups
+            models.Index(fields=['category', 'status']),   # For category filtering
+        ]
 
     # Returns an HTML image tag for the product's image
     def product_image(self):

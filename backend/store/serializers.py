@@ -61,8 +61,10 @@ class CategorySerializer(serializers.ModelSerializer):
         return None
     
     def get_products(self, obj):
-        products = Product.objects.filter(category=obj)
-        return ProductSerializer(products, many=True, context=self.context).data
+        # Optimize: Only get products if needed (for detail views)
+        # For list views, this method might not be called, but if it is, optimize the query
+        products = Product.objects.filter(category=obj).only('id', 'title', 'slug', 'price', 'image')
+        return ProductListSerializer(products, many=True, context=self.context).data
 
 # Define a serializer for the Tag model
 class TagSerializer(serializers.ModelSerializer):
@@ -222,7 +224,81 @@ class ColorSerializer(serializers.ModelSerializer):
         return None
 
 
-# Define a serializer for the Product model
+# Lightweight serializer for list views (without nested data)
+class ProductListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for product lists - excludes nested relations for better performance"""
+    product_rating = serializers.SerializerMethodField()
+    rating_count = serializers.SerializerMethodField()
+    order_count = serializers.SerializerMethodField()
+    get_precentage = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Product
+        fields = [
+            "id", "title", "image", "description", "price", "old_price",
+            "shipping_amount", "stock_qty", "in_stock", "status", "type",
+            "featured", "hot_deal", "special_offer", "digital", "views",
+            "orders", "saved", "sku", "pid", "slug", "date", "tags",
+            "category", "brand", "vendor", "product_rating", "rating_count",
+            "order_count", "get_precentage"
+        ]
+        depth = 1  # Only one level deep for foreign keys
+    
+    def get_image(self, obj):
+        """Optimized image URL generation - avoid expensive storage.exists() calls"""
+        if obj.image and hasattr(obj.image, 'name') and obj.image.name:
+            default_names = ['product.jpg', 'category.jpg', 'brand.jpg', 'gallery.jpg', 'shop-image.jpg']
+            if obj.image.name in default_names:
+                return None
+            
+            try:
+                from django.conf import settings
+                from backend.storages import MediaStorage
+                
+                # Directly generate URL without checking if file exists (faster)
+                # S3 will return 404 if file doesn't exist, which is acceptable
+                media_storage = MediaStorage()
+                image_url = media_storage.url(obj.image.name)
+                
+                # Make absolute if needed
+                if image_url and image_url.startswith('/'):
+                    if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                        image_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}{image_url}"
+                
+                request = self.context.get('request')
+                if request and image_url and not image_url.startswith('http'):
+                    return request.build_absolute_uri(image_url)
+                return image_url
+            except Exception:
+                return None
+        return None
+    
+    def get_product_rating(self, obj):
+        """Get product rating - use annotation if available, otherwise call method"""
+        # If queryset was annotated, use that (faster)
+        if hasattr(obj, 'avg_rating'):
+            return float(obj.avg_rating) if obj.avg_rating else 0
+        # Otherwise call the method (slower but works)
+        return obj.product_rating() if hasattr(obj, 'product_rating') else 0
+    
+    def get_rating_count(self, obj):
+        """Get rating count - use annotation if available"""
+        if hasattr(obj, 'rating_count_annotated'):
+            return obj.rating_count_annotated
+        return obj.rating_count() if hasattr(obj, 'rating_count') else 0
+    
+    def get_order_count(self, obj):
+        """Get order count - use annotation if available"""
+        if hasattr(obj, 'order_count_annotated'):
+            return obj.order_count_annotated
+        return obj.order_count() if hasattr(obj, 'order_count') else 0
+    
+    def get_get_precentage(self, obj):
+        """Get discount percentage"""
+        return obj.get_precentage() if hasattr(obj, 'get_precentage') else 0
+
+# Full serializer for detail views (with nested data)
 class ProductSerializer(serializers.ModelSerializer):
     # Serialize related Category, Tag, and Brand models
     # category = CategorySerializer(many=True, read_only=True)
@@ -281,6 +357,7 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
     
     def get_image(self, obj):
+        """Optimized image URL generation - avoid expensive storage.exists() calls"""
         request = self.context.get('request')
         # Check if image exists and is a valid file (not just a default string)
         if obj.image and hasattr(obj.image, 'name') and obj.image.name:
@@ -291,45 +368,31 @@ class ProductSerializer(serializers.ModelSerializer):
             
             try:
                 from django.conf import settings
-                from backend.storages import MediaStorage, StaticStorage
+                from backend.storages import MediaStorage
                 
-                # Get the image name/path from the database
-                image_name = obj.image.name
-                
-                # Check if file exists in media location first
+                # Directly generate URL without checking if file exists (faster)
+                # S3 will return 404 if file doesn't exist, which is acceptable
+                # This avoids expensive storage.exists() calls for every product
                 media_storage = MediaStorage()
-                image_url = None
+                image_url = media_storage.url(obj.image.name)
                 
-                if media_storage.exists(image_name):
-                    image_url = media_storage.url(image_name)
-                else:
-                    # Check if file exists in static location (backward compatibility)
-                    static_storage = StaticStorage()
-                    if static_storage.exists(image_name):
-                        image_url = static_storage.url(image_name)
-                    else:
-                        # File doesn't exist in either location, return None
-                        import logging
-                        logger = logging.getLogger(__name__)
-                        logger.warning(f"Product image file does not exist in S3: {image_name} for product {obj.id}")
-                        return None
-                
-                # If URL is relative, make it absolute
+                # Make absolute if needed
                 if image_url and image_url.startswith('/'):
                     if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
                         image_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}{image_url}"
                 
                 if image_url:
-                    if request:
-                        return request.build_absolute_uri(image_url) if not image_url.startswith('http') else image_url
+                    if request and not image_url.startswith('http'):
+                        return request.build_absolute_uri(image_url)
                     return image_url
                 
                 return None
             except (ValueError, AttributeError, Exception) as e:
-                # Log the error for debugging
+                # Only log errors in development/debug mode
                 import logging
                 logger = logging.getLogger(__name__)
-                logger.error(f"Error getting image URL for product {obj.id}: {e}")
+                if settings.DEBUG:
+                    logger.error(f"Error getting image URL for product {obj.id}: {e}")
                 return None
         return None
     

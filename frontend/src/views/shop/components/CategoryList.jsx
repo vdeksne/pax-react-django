@@ -46,7 +46,10 @@ const CategoryList = ({ categories }) => {
             }}
           >
             <img
-              src={c.image}
+              src={
+                c.image ||
+                "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png"
+              }
               alt={c.title}
               className="img-fluid rounded-circle"
               style={{
@@ -55,6 +58,11 @@ const CategoryList = ({ categories }) => {
                 objectFit: "cover",
               }}
               loading="lazy"
+              decoding="async"
+              onError={(e) => {
+                e.target.src =
+                  "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
+              }}
             />
             <span
               className="fw-bold"
