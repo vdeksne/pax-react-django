@@ -80,10 +80,23 @@ class ProductsAPIView(generics.ListAPIView):
     permission_classes = (AllowAny,)
 
     def get_queryset(self):
-        vendor_id = self.kwargs['vendor_id']
-        vendor = Vendor.objects.get(id=vendor_id)
-        products = Product.objects.filter(vendor=vendor)
-        return products
+        vendor_id = self.kwargs.get('vendor_id')
+        
+        # Validate vendor_id
+        if not vendor_id or vendor_id == 'undefined' or vendor_id == 'null':
+            return Product.objects.none()  # Return empty queryset
+        
+        try:
+            vendor_id = int(vendor_id)
+        except (ValueError, TypeError):
+            return Product.objects.none()  # Return empty queryset for invalid ID
+        
+        try:
+            vendor = Vendor.objects.get(id=vendor_id)
+            products = Product.objects.filter(vendor=vendor)
+            return products
+        except Vendor.DoesNotExist:
+            return Product.objects.none()  # Return empty queryset if vendor doesn't exist
 
 
 class OrdersAPIView(generics.ListAPIView):

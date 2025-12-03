@@ -240,8 +240,13 @@ function Dashboard() {
 
   // Separate effect for data fetching - MUST be called before any early returns
   useEffect(() => {
-    // Don't fetch if no vendorId
-    if (!vendorId) {
+    // Don't fetch if no vendorId or if it's invalid
+    if (
+      !vendorId ||
+      vendorId === 0 ||
+      vendorId === "undefined" ||
+      vendorId === "null"
+    ) {
       return;
     }
 
@@ -266,6 +271,16 @@ function Dashboard() {
           fetchingRef.current = true;
           setIsLoading(true);
           lastVendorIdRef.current = vendorId;
+
+          // Validate vendorId is a valid number before making requests
+          if (
+            !vendorId ||
+            vendorId === 0 ||
+            vendorId === "undefined" ||
+            vendorId === "null"
+          ) {
+            return;
+          }
 
           const [
             statsResponse,

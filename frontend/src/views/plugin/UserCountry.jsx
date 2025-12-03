@@ -114,8 +114,18 @@ function GetCurrentAddress() {
                             "";
                           return country;
                         }
+                      } else {
+                        // If not ok (404, 500, etc.), silently continue to fallback
+                        // Don't log 500 errors - they're expected when Nominatim is rate-limited
+                        if (
+                          import.meta.env.DEV &&
+                          proxyResponse.status !== 500
+                        ) {
+                          console.debug(
+                            `Geocoding proxy returned ${proxyResponse.status}`
+                          );
+                        }
                       }
-                      // If not ok (404, 500, etc.), silently continue to fallback
                     } catch (fetchError) {
                       clearTimeout(timeoutId);
                       // Silently handle fetch errors (404, timeout, network) - continue to fallback

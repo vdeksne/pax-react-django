@@ -17,23 +17,46 @@ function Products() {
   }
 
   const fetchData = async () => {
+    // Don't fetch if vendor_id is missing or invalid
+    if (
+      !userData?.vendor_id ||
+      userData?.vendor_id === 0 ||
+      userData?.vendor_id === "undefined"
+    ) {
+      setProducts([]);
+      return;
+    }
+
     try {
       const response = await axios.get(
-        `vendor/products/${userData?.vendor_id}/`
+        `vendor/products/${userData.vendor_id}/`
       );
       setProducts(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
+      setProducts([]);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    // Only fetch if userData is available and has vendor_id
+    if (userData && userData.vendor_id && userData.vendor_id !== 0) {
+      fetchData();
+    }
+  }, [userData?.vendor_id]);
 
   const handleDeleteProduct = async (productPid) => {
+    // Don't delete if vendor_id is missing or invalid
+    if (
+      !userData?.vendor_id ||
+      userData?.vendor_id === 0 ||
+      userData?.vendor_id === "undefined"
+    ) {
+      return;
+    }
+
     try {
-      await deleteProduct(userData?.vendor_id, productPid);
+      await deleteProduct(userData.vendor_id, productPid);
       await fetchData();
     } catch (error) {
       console.log(error);
@@ -41,13 +64,24 @@ function Products() {
   };
 
   const handleFilterProduct = async (param) => {
+    // Don't fetch if vendor_id is missing or invalid
+    if (
+      !userData?.vendor_id ||
+      userData?.vendor_id === 0 ||
+      userData?.vendor_id === "undefined"
+    ) {
+      setProducts([]);
+      return;
+    }
+
     try {
       const response = await axios.get(
-        `vendor-product-filter/${userData?.vendor_id}?filter=${param}`
+        `vendor-product-filter/${userData.vendor_id}?filter=${param}`
       );
       setProducts(response.data);
     } catch (error) {
       console.log(error);
+      setProducts([]);
     }
   };
 
