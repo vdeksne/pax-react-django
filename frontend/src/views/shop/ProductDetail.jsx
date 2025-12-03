@@ -280,11 +280,14 @@ function ProductDetail() {
                                   !img.dataset.triedStatic
                                 ) {
                                   img.dataset.triedStatic = "true";
-                                  const staticSrc = currentSrc.replace("/media/", "/static/");
+                                  const staticSrc = currentSrc.replace(
+                                    "/media/",
+                                    "/static/"
+                                  );
                                   img.src = staticSrc;
                                   return;
                                 }
-                                
+
                                 // Strategy 2: If from static/, try media/
                                 if (
                                   currentSrc.includes("/static/") &&
@@ -292,7 +295,10 @@ function ProductDetail() {
                                   !img.dataset.triedMedia
                                 ) {
                                   img.dataset.triedMedia = "true";
-                                  const mediaSrc = currentSrc.replace("/static/", "/media/");
+                                  const mediaSrc = currentSrc.replace(
+                                    "/static/",
+                                    "/media/"
+                                  );
                                   img.src = mediaSrc;
                                   return;
                                 }
@@ -324,11 +330,14 @@ function ProductDetail() {
                                   !img.dataset.triedStatic
                                 ) {
                                   img.dataset.triedStatic = "true";
-                                  const staticSrc = currentSrc.replace("/media/", "/static/");
+                                  const staticSrc = currentSrc.replace(
+                                    "/media/",
+                                    "/static/"
+                                  );
                                   img.src = staticSrc;
                                   return;
                                 }
-                                
+
                                 // Strategy 2: If from static/, try media/
                                 if (
                                   currentSrc.includes("/static/") &&
@@ -336,7 +345,10 @@ function ProductDetail() {
                                   !img.dataset.triedMedia
                                 ) {
                                   img.dataset.triedMedia = "true";
-                                  const mediaSrc = currentSrc.replace("/static/", "/media/");
+                                  const mediaSrc = currentSrc.replace(
+                                    "/static/",
+                                    "/media/"
+                                  );
                                   img.src = mediaSrc;
                                   return;
                                 }

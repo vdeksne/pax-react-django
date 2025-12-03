@@ -88,13 +88,13 @@ function Products() {
               page_size: itemsPerPage,
             },
           }),
-          apiInstance.get("category/", { 
+          apiInstance.get("category/", {
             timeout: 20000, // 20s for categories (increased to prevent cancellation)
           }),
         ]);
 
         if (!isMounted) return; // Don't update state if component unmounted
-        
+
         clearTimeout(maxLoadTime);
 
         // Handle products - now with pagination
@@ -181,7 +181,7 @@ function Products() {
     };
 
     fetchAllData();
-    
+
     // Cleanup function to prevent state updates if component unmounts
     return () => {
       isMounted = false;
