@@ -10,11 +10,36 @@ function AddProduct() {
   const userData = UserData();
   const location = useLocation();
 
+  // All hooks must be called at the top level, before any conditional logic
   const redirectCheckedRef = useRef(false);
   const redirectTimeoutRef = useRef(null);
+  const vendorCheckRef = useRef(false);
+
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [vendorStatusChecked, setVendorStatusChecked] = useState(false);
-  const vendorCheckRef = useRef(false);
+  const [product, setProduct] = useState({
+    title: "",
+    image: null,
+    description: "",
+    category: "",
+    tags: "",
+    brand: "",
+    price: "",
+    old_price: "",
+    shipping_amount: "",
+    stock_qty: "",
+    vendor: null, // Will be set after vendorId is determined
+  });
+  const [specifications, setSpecifications] = useState([
+    { title: "", content: "" },
+  ]);
+  const [colors, setColors] = useState([
+    { name: "", color_code: "", image: null },
+  ]);
+  const [sizes, setSizes] = useState([{ name: "", price: 0.0 }]);
+  const [gallery, setGallery] = useState([{ image: null }]);
+  const [category, setCategory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Extract vendor_id and check for validity
   const vendorIdValue = userData?.vendor_id;
@@ -25,6 +50,16 @@ function AddProduct() {
     vendorIdValue !== "null"
       ? vendorIdValue
       : null;
+
+  // Update product vendor when vendorId is available
+  useEffect(() => {
+    if (vendorId) {
+      setProduct((prev) => ({
+        ...prev,
+        vendor: vendorId,
+      }));
+    }
+  }, [vendorId]);
 
   // Effect to verify vendor status from backend if token doesn't have it
   useEffect(() => {
@@ -133,30 +168,6 @@ function AddProduct() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, vendorId, vendorStatusChecked, userData]);
-
-  const [product, setProduct] = useState({
-    title: "",
-    image: null,
-    description: "",
-    category: "",
-    tags: "",
-    brand: "",
-    price: "",
-    old_price: "",
-    shipping_amount: "",
-    stock_qty: "",
-    vendor: vendorId || null,
-  });
-  const [specifications, setSpecifications] = useState([
-    { title: "", content: "" },
-  ]);
-  const [colors, setColors] = useState([
-    { name: "", color_code: "", image: null },
-  ]);
-  const [sizes, setSizes] = useState([{ name: "", price: 0.0 }]);
-  const [gallery, setGallery] = useState([{ image: null }]);
-  const [category, setCategory] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleAddMore = (setStateFunction) => {
     setStateFunction((prevState) => [...prevState, {}]);
