@@ -66,14 +66,14 @@ function Products() {
       // Always set loading to false after a maximum time to ensure page renders
       const maxLoadTime = setTimeout(() => {
         setLoading(false);
-      }, 25000); // 25 seconds max - ensure page always renders
+      }, 70000); // 70 seconds max - ensure page always renders (longer than API timeout)
 
       try {
         // Use Promise.allSettled to handle partial failures gracefully
-        // Use shorter timeout for categories (non-critical)
+        // Increased timeouts to allow backend more time to respond
         const [productsResult, categoryResult] = await Promise.allSettled([
-          apiInstance.get("products/", { timeout: 20000 }),
-          apiInstance.get("category/", { timeout: 10000 }), // 10s for categories
+          apiInstance.get("products/", { timeout: 60000 }), // 60s for products
+          apiInstance.get("category/", { timeout: 60000 }), // 60s for categories
         ]);
 
         clearTimeout(maxLoadTime);

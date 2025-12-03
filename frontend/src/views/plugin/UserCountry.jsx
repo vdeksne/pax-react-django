@@ -88,7 +88,7 @@ function GetCurrentAddress() {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(
                       () => controller.abort(),
-                      8000
+                      30000 // 30 seconds for geocoding
                     );
 
                     try {

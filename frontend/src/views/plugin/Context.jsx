@@ -53,9 +53,9 @@ export const CartProvider = ({ children }) => {
       const url = userId
         ? `cart-list/${cart_id}/${userId}/`
         : `cart-list/${cart_id}/`;
-      // Use shorter timeout for cart count (non-critical feature)
+      // Increased timeout for cart count to allow backend more time
       const response = await axios.get(url, {
-        timeout: 8000, // 8 second timeout
+        timeout: 30000, // 30 second timeout
         signal: abortController.signal,
       });
 
