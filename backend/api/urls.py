@@ -7,6 +7,12 @@ from vendor import views as vendor_views
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import RegisterView, GeocodeReverseView
 
+# Verify GoogleAuthView is importable
+try:
+    GoogleAuthView = userauths_views.GoogleAuthView
+except AttributeError:
+    raise ImportError("GoogleAuthView not found in userauths.views. Please check the view definition.")
+
 
 urlpatterns = [
     path('', userauths_views.getRoutes),
