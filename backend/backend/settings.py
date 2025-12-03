@@ -46,9 +46,9 @@ CSRF_TRUSTED_ORIGINS = [
     'https://pax-connect.netlify.app',
 ]
 # Allow popups for Google OAuth and other third-party services
-# 'same-origin-allow-popups' allows popups from same origin and cross-origin popups
-# This is required for Google OAuth to work properly
-SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
+# Set to 'unsafe-none' to allow Google OAuth popups to communicate properly
+# This is required for Google Sign-In to work with postMessage
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'unsafe-none'
 
 
 # Application definition
