@@ -1,31 +1,33 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import Swal from 'sweetalert2'
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 
-import apiInstance from '../../utils/axios';
-import UserData from '../plugin/UserData';
-import Sidebar from './Sidebar';
-
+import apiInstance from "../../utils/axios";
+import UserData from "../plugin/UserData";
+import Sidebar from "./Sidebar";
 
 function UpdateProduct() {
-  const userData = UserData()
-  const axios = apiInstance
-  const param = useParams()
-
+  const userData = UserData();
+  const axios = apiInstance;
+  const param = useParams();
 
   const [product, setProduct] = useState([]);
-  const [specifications, setSpecifications] = useState([{ title: '', content: '' }]);
-  const [colors, setColors] = useState([{ name: '', color_code: '', image: null }]);
-  const [sizes, setSizes] = useState([{ name: '', price: 0.00 }]);
+  const [specifications, setSpecifications] = useState([
+    { title: "", content: "" },
+  ]);
+  const [colors, setColors] = useState([
+    { name: "", color_code: "", image: null },
+  ]);
+  const [sizes, setSizes] = useState([{ name: "", price: 0.0 }]);
   const [gallery, setGallery] = useState([{ image: null }]);
   const [category, setCategory] = useState([]);
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
 
   if (UserData()?.vendor_id === 0) {
-    window.location.href = '/vendor/register/'
+    window.location.href = "/vendor/register/";
   }
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   // console.log("specifications: ", specifications)
   // console.log("colors: ", colors)
@@ -51,7 +53,6 @@ function UpdateProduct() {
       return newState;
     });
   };
-
 
   const handleImageChange = (index, event, setStateFunction) => {
     const file = event.target.files[0];
@@ -79,28 +80,24 @@ function UpdateProduct() {
     }
   };
 
-
   const handleProductInputChange = (event) => {
     setProduct({
       ...product,
-      [event.target.name]: event.target.value
-    })
+      [event.target.name]: event.target.value,
+    });
   };
 
   useEffect(() => {
     // Fetch product details from the backend
     const fetchProductDetails = () => {
-
       setProduct({
         ...product,
-        image: product.image
+        image: product.image,
       });
     };
 
     fetchProductDetails();
   }, []);
-
-
 
   // const handleProductFileChange = (event) => {
 
@@ -129,7 +126,6 @@ function UpdateProduct() {
   //   }
   // };
 
-
   const handleProductFileChange = (event) => {
     const file = event.target.files[0];
 
@@ -149,45 +145,53 @@ function UpdateProduct() {
 
   useEffect(() => {
     const fetchCategory = async () => {
-      axios.get('category/').then((res) => {
-        setCategory(res.data)
-      })
-    }
-    fetchCategory()
-  }, [])
-
+      axios.get("category/").then((res) => {
+        setCategory(res.data);
+      });
+    };
+    fetchCategory();
+  }, []);
 
   useEffect(() => {
     const fetchProductItems = async () => {
-      axios.get(`vendor-product-edit/${userData?.vendor_id}/${param.pid}/`).then((res) => {
-        setProduct(res.data)
-        setColors(res.data.color)
-        setSizes(res.data.size)
-        setSpecifications(res.data.specification)
-        setGallery(res.data.gallery)
-      })
-    }
-    fetchProductItems()
-  }, [])
-
+      axios
+        .get(`vendor-product-edit/${userData?.vendor_id}/${param.pid}/`)
+        .then((res) => {
+          setProduct(res.data);
+          setColors(res.data.color);
+          setSizes(res.data.size);
+          setSpecifications(res.data.specification);
+          setGallery(res.data.gallery);
+        });
+    };
+    fetchProductItems();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true)
+    setIsLoading(true);
 
-    if (product.title == "" || product.description == "" || product.price == "" || product.category === null || product.shipping_amount == "" || product.stock_qty == "" || product.image === null) {
-      setIsLoading(false)
+    if (
+      product.title == "" ||
+      product.description == "" ||
+      product.price == "" ||
+      product.category === null ||
+      product.shipping_amount == "" ||
+      product.stock_qty == "" ||
+      product.image === null
+    ) {
+      setIsLoading(false);
       console.log("Please fill in all required fields");
       Swal.fire({
-        icon: 'warning',
-        title: 'Missing Fields!',
+        icon: "warning",
+        title: "Missing Fields!",
         text: "All fields are required to create a product",
-      })
+      });
       return;
     }
 
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       const formData = new FormData();
 
       // Append product data
@@ -200,14 +204,34 @@ function UpdateProduct() {
       //   }
       // });
 
-      Object.entries(product)?.forEach(([key, value]) => {
-        console.log(`key: ${key} - value: ${value}`);
-        if (key === 'image' && value) {
-          formData.append(key, value);
-        } else {
-          formData.append(key, value);
+      // Only append product fields that should be sent to the API
+      // Exclude nested objects, arrays, and computed fields
+      const productFieldsToSend = [
+        'title', 'description', 'price', 'old_price', 'shipping_amount',
+        'stock_qty', 'in_stock', 'status', 'type', 'featured', 'hot_deal',
+        'special_offer', 'digital', 'tags', 'brand', 'slug'
+      ];
+      
+      productFieldsToSend.forEach((key) => {
+        if (product[key] !== undefined && product[key] !== null) {
+          formData.append(key, product[key]);
         }
       });
+      
+      // Handle category - extract ID if it's an object
+      if (product.category) {
+        const categoryId = typeof product.category === 'object' 
+          ? product.category.id || product.category 
+          : product.category;
+        if (categoryId) {
+          formData.append('category', categoryId);
+        }
+      }
+      
+      // Handle image - only if it's a File object (new upload)
+      if (product.image && product.image instanceof File) {
+        formData.append('image', product.image);
+      }
 
       // Append specifications data
       specifications?.forEach((specification, index) => {
@@ -216,11 +240,19 @@ function UpdateProduct() {
         });
       });
 
-
       colors?.forEach((color, index) => {
         Object.entries(color).forEach(([key, value]) => {
-          if (key === 'image' && value && value.file && value.file.type.startsWith('image/')) {
-            formData.append(`colors[${index}][${key}]`, value.file, value.file.name);
+          if (
+            key === "image" &&
+            value &&
+            value.file &&
+            value.file.type.startsWith("image/")
+          ) {
+            formData.append(
+              `colors[${index}][${key}]`,
+              value.file,
+              value.file.name
+            );
           } else {
             console.log(String(value));
             formData.append(`colors[${index}][${key}]`, String(value)); // Convert `value` to a string
@@ -238,39 +270,52 @@ function UpdateProduct() {
       // Append gallery data
       gallery?.forEach((item, index) => {
         if (item.image) {
-          formData.append(`gallery[${index}][image]`, item.image.file);
+          // Check if it's a new file upload or existing image URL
+          if (item.image.file && item.image.file instanceof File) {
+            formData.append(`gallery[${index}][image]`, item.image.file);
+          } else if (item.image instanceof File) {
+            formData.append(`gallery[${index}][image]`, item.image);
+          }
+          // If it's just a URL string, skip it (existing image, no update needed)
         }
       });
 
-      const response = await apiInstance.patch(`vendor-product-edit/${userData?.vendor_id}/${param.pid}/`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await apiInstance.patch(
+        `vendor-product-edit/${userData?.vendor_id}/${param.pid}/`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-      navigate('/vendor/products/')
+      // Axios automatically parses JSON, so response.data contains the data
+      // No need to call .json() - that's for fetch API, not axios
+      
+      navigate("/vendor/products/");
 
       Swal.fire({
-        icon: 'success',
-        title: 'Product Updated Successfully',
-        text: 'This product has been successfully updated',
+        icon: "success",
+        title: "Product Updated Successfully",
+        text: "This product has been successfully updated",
       });
-
-      const data = await response.json();
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error("Error submitting form:", error);
       setIsLoading(false);
-      
+
       // Show detailed error message to user
-      const errorMessage = error.response?.data?.errors 
+      const errorMessage = error.response?.data?.errors
         ? JSON.stringify(error.response.data.errors, null, 2)
-        : error.response?.data?.error || error.message || 'Failed to update product';
-      
+        : error.response?.data?.error ||
+          error.message ||
+          "Failed to update product";
+
       Swal.fire({
-        icon: 'error',
-        title: 'Update Failed',
+        icon: "error",
+        title: "Update Failed",
         text: errorMessage,
-        footer: error.response?.data?.detail || ''
+        footer: error.response?.data?.detail || "",
       });
     }
   };
@@ -283,7 +328,12 @@ function UpdateProduct() {
           {/*/col*/}
           <div className="col-md-9 col-lg-10 main mt-4">
             <div className="container">
-              <form className="main-body" method='POST' encType="multipart/form-data" onSubmit={handleSubmit}>
+              <form
+                className="main-body"
+                method="POST"
+                encType="multipart/form-data"
+                onSubmit={handleSubmit}
+              >
                 <div className="tab-content" id="pills-tabContent">
                   <div
                     className="tab-pane fade show active"
@@ -301,28 +351,45 @@ function UpdateProduct() {
                                 <img
                                   src={product.image.preview}
                                   alt="Product Thumbnail Preview"
-                                  style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: 10 }}
+                                  style={{
+                                    width: "100%",
+                                    height: "200px",
+                                    objectFit: "cover",
+                                    borderRadius: 10,
+                                  }}
                                 />
                               ) : (
                                 <img
                                   src={product.image}
-                                  style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: 10 }}
+                                  style={{
+                                    width: "100%",
+                                    height: "200px",
+                                    objectFit: "cover",
+                                    borderRadius: 10,
+                                  }}
                                   alt=""
                                 />
                               )}
 
                               <div className="mt-3">
-                                {product.title !== "" &&
+                                {product.title !== "" && (
                                   <h4 className="text-dark">{product.title}</h4>
-                                }
-                                {product.title === "" &&
+                                )}
+                                {product.title === "" && (
                                   <h4 className="text-dark">Product Title</h4>
-                                }
+                                )}
                               </div>
                             </div>
                             <div className="d-flex justify-content-center mt-4">
-                              <Link to={`/detail/${product.slug}/`} className='btn btn-success mt-4'><i className='fas fa-eye'></i></Link>
-                              <Link className='btn btn-danger mt-4 ms-2'><i className='fas fa-trash'></i></Link>
+                              <Link
+                                to={`/detail/${product.slug}/`}
+                                className="btn btn-success mt-4"
+                              >
+                                <i className="fas fa-eye"></i>
+                              </Link>
+                              <Link className="btn btn-danger mt-4 ms-2">
+                                <i className="fas fa-trash"></i>
+                              </Link>
                             </div>
                           </div>
                         </div>
@@ -330,9 +397,7 @@ function UpdateProduct() {
 
                       <div className="col-md-8">
                         <div className="card mb-3">
-
                           <div className="card-body">
-
                             <div className="row text-dark">
                               <div className="col-lg-12 mb-2">
                                 <label htmlFor="" className="mb-2">
@@ -343,7 +408,9 @@ function UpdateProduct() {
                                   className="form-control"
                                   name="image"
                                   id=""
-                                  onChange={handleProductFileChange || product.image}
+                                  onChange={
+                                    handleProductFileChange || product.image
+                                  }
                                 />
                               </div>
                               <div className="col-lg-12 mb-2 ">
@@ -355,7 +422,7 @@ function UpdateProduct() {
                                   className="form-control"
                                   id=""
                                   name="title"
-                                  value={product.title || ''}
+                                  value={product.title || ""}
                                   onChange={handleProductInputChange}
                                 />
                               </div>
@@ -370,7 +437,7 @@ function UpdateProduct() {
                                   rows={10}
                                   defaultValue={""}
                                   name="description"
-                                  value={product.description || ''}
+                                  value={product.description || ""}
                                   onChange={handleProductInputChange}
                                 />
                               </div>
@@ -382,12 +449,14 @@ function UpdateProduct() {
                                   className="select form-control"
                                   id=""
                                   name="category"
-                                  value={product.category || ''}
+                                  value={product.category || ""}
                                   onChange={handleProductInputChange}
                                 >
                                   <option value="">- Select -</option>
                                   {category?.map((c, index) => (
-                                    <option key={index} value={c.id}>{c.title}</option>
+                                    <option key={index} value={c.id}>
+                                      {c.title}
+                                    </option>
                                   ))}
                                 </select>
                               </div>
@@ -399,7 +468,7 @@ function UpdateProduct() {
                                   type="text"
                                   className="form-control"
                                   name="brand"
-                                  value={product.brand || ''}
+                                  value={product.brand || ""}
                                   onChange={handleProductInputChange}
                                 />
                               </div>
@@ -411,7 +480,7 @@ function UpdateProduct() {
                                   type="number"
                                   className="form-control"
                                   name="price"
-                                  value={product.price || ''}
+                                  value={product.price || ""}
                                   onChange={handleProductInputChange}
                                 />
                               </div>
@@ -423,7 +492,7 @@ function UpdateProduct() {
                                   type="number"
                                   className="form-control"
                                   name="old_price"
-                                  value={product.old_price || ''}
+                                  value={product.old_price || ""}
                                   onChange={handleProductInputChange}
                                 />
                               </div>
@@ -435,7 +504,7 @@ function UpdateProduct() {
                                   type="number"
                                   className="form-control"
                                   name="shipping_amount"
-                                  value={product.shipping_amount || ''}
+                                  value={product.shipping_amount || ""}
                                   onChange={handleProductInputChange}
                                 />
                               </div>
@@ -447,7 +516,7 @@ function UpdateProduct() {
                                   type="number"
                                   className="form-control"
                                   name="stock_qty"
-                                  value={product.stock_qty || ''}
+                                  value={product.stock_qty || ""}
                                   onChange={handleProductInputChange}
                                 />
                               </div>
@@ -460,14 +529,17 @@ function UpdateProduct() {
                                   type="text"
                                   className="form-control"
                                   name="tags"
-                                  value={product.tags || ''}
+                                  value={product.tags || ""}
                                   onChange={handleProductInputChange}
                                 />
-                                <span style={{ fontSize: 12 }} className='text-muted'>NOTE: Seperate tags with comma</span>
-
+                                <span
+                                  style={{ fontSize: 12 }}
+                                  className="text-muted"
+                                >
+                                  NOTE: Seperate tags with comma
+                                </span>
                               </div>
                             </div>
-
                           </div>
                         </div>
                       </div>
@@ -485,7 +557,6 @@ function UpdateProduct() {
                         <div className="card mb-3">
                           <div className="card-body">
                             {gallery?.map((item, index) => (
-
                               <div className="row text-dark mb-5">
                                 <div className="col-lg-3">
                                   {/* {item.image && (
@@ -496,24 +567,42 @@ function UpdateProduct() {
                                     />
                                   )} */}
 
-                                  {item.image && (item.image.preview ? (
-                                    <img
-                                      src={item.image.preview}
-                                      alt="Product Thumbnail Preview"
-                                      style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: 10 }}
-                                    />
-                                  ) : (
-                                    <img
-                                      src={item.image}
-                                      style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: 10 }}
-                                      alt=""
-                                    />
-                                  ))}
+                                  {item.image &&
+                                    (item.image.preview ? (
+                                      <img
+                                        src={item.image.preview}
+                                        alt="Product Thumbnail Preview"
+                                        style={{
+                                          width: "100%",
+                                          height: "100px",
+                                          objectFit: "cover",
+                                          borderRadius: 10,
+                                        }}
+                                      />
+                                    ) : (
+                                      <img
+                                        src={item.image}
+                                        style={{
+                                          width: "100%",
+                                          height: "100px",
+                                          objectFit: "cover",
+                                          borderRadius: 10,
+                                        }}
+                                        alt=""
+                                      />
+                                    ))}
                                   {!item.image && (
                                     <img
                                       src="https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png"
-                                      alt={`Preview for gallery item ${index + 1}`}
-                                      style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: 5 }}
+                                      alt={`Preview for gallery item ${
+                                        index + 1
+                                      }`}
+                                      style={{
+                                        width: "100%",
+                                        height: "100px",
+                                        objectFit: "cover",
+                                        borderRadius: 5,
+                                      }}
                                     />
                                   )}
                                 </div>
@@ -526,21 +615,32 @@ function UpdateProduct() {
                                     className="form-control"
                                     name=""
                                     id=""
-                                    onChange={(e) => handleImageChange(index, e, setGallery)}
+                                    onChange={(e) =>
+                                      handleImageChange(index, e, setGallery)
+                                    }
                                   />
                                 </div>
                                 <div className="col-lg-3 mt-2">
-                                  <button onClick={() => handleRemove(index, setGallery)} type='button' className='btn btn-danger mt-4'>Remove</button>
+                                  <button
+                                    onClick={() =>
+                                      handleRemove(index, setGallery)
+                                    }
+                                    type="button"
+                                    className="btn btn-danger mt-4"
+                                  >
+                                    Remove
+                                  </button>
                                 </div>
-
                               </div>
                             ))}
 
-                            {gallery < 1 &&
-                              <h4>No Images Selected</h4>
-                            }
+                            {gallery < 1 && <h4>No Images Selected</h4>}
 
-                            <button type='button' onClick={() => handleAddMore(setGallery)} className="btn btn-primary mt-2">
+                            <button
+                              type="button"
+                              onClick={() => handleAddMore(setGallery)}
+                              className="btn btn-primary mt-2"
+                            >
                               <i className="fas fa-plus" /> Add More Images
                             </button>
                           </div>
@@ -559,9 +659,7 @@ function UpdateProduct() {
                       <div className="col-md-12">
                         <div className="card mb-3">
                           <div className="card-body">
-
                             {specifications?.map((specification, index) => (
-
                               <div className="row text-dark">
                                 <div className="col-lg-3 mb-2">
                                   <label htmlFor="" className="mb-2">
@@ -570,9 +668,15 @@ function UpdateProduct() {
                                   <input
                                     type="text"
                                     className="form-control"
-                                    value={specification.title || ''}
-                                    onChange={(e) => handleInputChange(index, 'title', e.target.value, setSpecifications)}
-
+                                    value={specification.title || ""}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        index,
+                                        "title",
+                                        e.target.value,
+                                        setSpecifications
+                                      )
+                                    }
                                   />
                                 </div>
                                 <div className="col-lg-6 mb-2">
@@ -582,23 +686,42 @@ function UpdateProduct() {
                                   <input
                                     type="text"
                                     className="form-control"
-                                    value={specification.content || ''}
-                                    onChange={(e) => handleInputChange(index, 'content', e.target.value, setSpecifications)}
-
+                                    value={specification.content || ""}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        index,
+                                        "content",
+                                        e.target.value,
+                                        setSpecifications
+                                      )
+                                    }
                                   />
                                 </div>
                                 <div className="col-lg-3 mb-2">
-                                  <button type='button' onClick={() => handleRemove(index, setSpecifications)} className='btn btn-danger mt-4'>Remove</button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemove(index, setSpecifications)
+                                    }
+                                    className="btn btn-danger mt-4"
+                                  >
+                                    Remove
+                                  </button>
                                 </div>
                               </div>
                             ))}
 
-                            {specifications?.length < 1 &&
+                            {specifications?.length < 1 && (
                               <h4>No Specification Form</h4>
-                            }
+                            )}
 
-                            <button type='button' onClick={() => handleAddMore(setSpecifications)} className="btn btn-primary mt-2">
-                              <i className="fas fa-plus" /> Add More Specifications
+                            <button
+                              type="button"
+                              onClick={() => handleAddMore(setSpecifications)}
+                              className="btn btn-primary mt-2"
+                            >
+                              <i className="fas fa-plus" /> Add More
+                              Specifications
                             </button>
                           </div>
                         </div>
@@ -618,7 +741,6 @@ function UpdateProduct() {
                         <div className="card mb-3">
                           <div className="card-body">
                             {sizes?.map((s, index) => (
-
                               <div className="row text-dark">
                                 <div className="col-lg-3 mb-2">
                                   <label htmlFor="" className="mb-2">
@@ -630,9 +752,15 @@ function UpdateProduct() {
                                     name=""
                                     placeholder="XXL"
                                     id=""
-                                    value={s.name || ''}
-                                    onChange={(e) => handleInputChange(index, 'name', e.target.value, setSizes)}
-
+                                    value={s.name || ""}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        index,
+                                        "name",
+                                        e.target.value,
+                                        setSizes
+                                      )
+                                    }
                                   />
                                 </div>
                                 <div className="col-lg-6 mb-2">
@@ -645,20 +773,36 @@ function UpdateProduct() {
                                     className="form-control"
                                     name=""
                                     id=""
-                                    value={s.price || ''}
-                                    onChange={(e) => handleInputChange(index, 'price', e.target.value, setSizes)}
-
+                                    value={s.price || ""}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        index,
+                                        "price",
+                                        e.target.value,
+                                        setSizes
+                                      )
+                                    }
                                   />
                                 </div>
                                 <div className="col-lg-3 mt-2">
-                                  <button type='button' onClick={() => handleRemove(index, setSizes)} className='btn btn-danger mt-4'>Remove</button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemove(index, setSizes)
+                                    }
+                                    className="btn btn-danger mt-4"
+                                  >
+                                    Remove
+                                  </button>
                                 </div>
                               </div>
                             ))}
-                            {sizes < 1 &&
-                              <h4>No Size Added</h4>
-                            }
-                            <button type='button' onClick={() => handleAddMore(setSizes)} className="btn btn-primary mt-2">
+                            {sizes < 1 && <h4>No Size Added</h4>}
+                            <button
+                              type="button"
+                              onClick={() => handleAddMore(setSizes)}
+                              className="btn btn-primary mt-2"
+                            >
                               <i className="fas fa-plus" /> Add More Sizes
                             </button>
                           </div>
@@ -689,9 +833,15 @@ function UpdateProduct() {
                                     name=""
                                     placeholder="Green"
                                     id=""
-                                    value={c.name || ''}
-                                    onChange={(e) => handleInputChange(index, 'name', e.target.value, setColors)}
-
+                                    value={c.name || ""}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        index,
+                                        "name",
+                                        e.target.value,
+                                        setColors
+                                      )
+                                    }
                                   />
                                 </div>
                                 <div className="col-lg-2 mb-2">
@@ -704,9 +854,15 @@ function UpdateProduct() {
                                     className="form-control"
                                     name=""
                                     id=""
-                                    value={c.color_code || ''}
-                                    onChange={(e) => handleInputChange(index, 'color_code', e.target.value, setColors)}
-
+                                    value={c.color_code || ""}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        index,
+                                        "color_code",
+                                        e.target.value,
+                                        setColors
+                                      )
+                                    }
                                   />
                                 </div>
                                 <div className="col-lg-3 mb-2">
@@ -718,8 +874,9 @@ function UpdateProduct() {
                                     className="form-control"
                                     name=""
                                     id=""
-                                    onChange={(e) => handleImageChange(index, e, setColors)}
-
+                                    onChange={(e) =>
+                                      handleImageChange(index, e, setColors)
+                                    }
                                   />
                                 </div>
 
@@ -727,31 +884,54 @@ function UpdateProduct() {
                                   {c.image && (
                                     <img
                                       src={c.image.preview}
-                                      alt={`Preview for gallery item ${index + 1}`}
-                                      style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: 5 }}
+                                      alt={`Preview for gallery item ${
+                                        index + 1
+                                      }`}
+                                      style={{
+                                        width: "100%",
+                                        height: "100px",
+                                        objectFit: "cover",
+                                        borderRadius: 5,
+                                      }}
                                     />
                                   )}
                                   {!c.image && (
                                     <img
                                       src="https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png"
-                                      alt={`Preview for gallery item ${index + 1}`}
-                                      style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: 5 }}
+                                      alt={`Preview for gallery item ${
+                                        index + 1
+                                      }`}
+                                      style={{
+                                        width: "100%",
+                                        height: "100px",
+                                        objectFit: "cover",
+                                        borderRadius: 5,
+                                      }}
                                     />
                                   )}
                                 </div>
 
                                 <div className="col-lg-2 mt-2">
-                                  <button type='button' onClick={() => handleRemove(index, setColors)} className='btn btn-danger mt-4'>Remove</button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemove(index, setColors)
+                                    }
+                                    className="btn btn-danger mt-4"
+                                  >
+                                    Remove
+                                  </button>
                                 </div>
-
                               </div>
                             ))}
 
-                            {colors < 1 &&
-                              <h4>No Colors Added</h4>
-                            }
+                            {colors < 1 && <h4>No Colors Added</h4>}
 
-                            <button type='button' onClick={() => handleAddMore(setColors)} className="btn btn-primary mt-2">
+                            <button
+                              type="button"
+                              onClick={() => handleAddMore(setColors)}
+                              className="btn btn-primary mt-2"
+                            >
                               <i className="fas fa-plus" /> Add More Colors
                             </button>
                           </div>
@@ -837,7 +1017,7 @@ function UpdateProduct() {
                       </li>
                     </ul>
                     <div className="d-flex justify-content-center mb-5">
-                      <button type='submit' className="btn btn-success w-50">
+                      <button type="submit" className="btn btn-success w-50">
                         Create Product <i className="fa fa-check-circle" />{" "}
                       </button>
                     </div>
@@ -849,7 +1029,7 @@ function UpdateProduct() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default UpdateProduct
+export default UpdateProduct;
