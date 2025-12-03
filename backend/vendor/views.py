@@ -747,6 +747,26 @@ class ShopUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = (AllowAny, )      
     parser_classes = (MultiPartParser, FormParser)
     
+    def get_object(self):
+        pk = self.kwargs.get('pk')
+        
+        # Validate pk
+        if not pk:
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Vendor ID is required")
+        
+        try:
+            pk = int(pk)
+        except (ValueError, TypeError):
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Invalid vendor ID")
+        
+        try:
+            return Vendor.objects.get(id=pk)
+        except Vendor.DoesNotExist:
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Vendor not found")
+    
     def update(self, request, *args, **kwargs):
         import logging
         logger = logging.getLogger(__name__)

@@ -75,9 +75,28 @@ function Settings() {
   };
 
   const fetchVendorData = async () => {
+    // Don't fetch if vendor_id is missing or invalid
+    if (
+      !userData?.vendor_id ||
+      userData?.vendor_id === 0 ||
+      userData?.vendor_id === "undefined" ||
+      userData?.vendor_id === "null"
+    ) {
+      // Set empty vendor data if no vendor_id
+      setVendorData({
+        name: "",
+        description: "",
+        mobile: "",
+        image: "",
+        slug: "",
+      });
+      setVendorImage("");
+      return;
+    }
+
     try {
       const res = await axios.get(
-        `vendor-shop-settings/${userData?.vendor_id}/`
+        `vendor-shop-settings/${userData.vendor_id}/`
       );
       setVendorData({
         name: res.data?.name || "",
@@ -89,13 +108,30 @@ function Settings() {
       setVendorImage(res.data?.image || "");
     } catch (error) {
       console.error("Error fetching vendor data:", error);
+      // Set empty vendor data on error
+      setVendorData({
+        name: "",
+        description: "",
+        mobile: "",
+        image: "",
+        slug: "",
+      });
+      setVendorImage("");
     }
   };
 
   useEffect(() => {
     fetchProfileData();
-    fetchVendorData();
-  }, []);
+    // Only fetch vendor data if vendor_id exists
+    if (
+      userData?.vendor_id &&
+      userData?.vendor_id !== 0 &&
+      userData?.vendor_id !== "undefined" &&
+      userData?.vendor_id !== "null"
+    ) {
+      fetchVendorData();
+    }
+  }, [userData?.vendor_id]);
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -174,6 +210,21 @@ function Settings() {
   const handleShopFormSubmit = async (e) => {
     e.preventDefault();
 
+    // Don't submit if vendor_id is missing or invalid
+    if (
+      !userData?.vendor_id ||
+      userData?.vendor_id === 0 ||
+      userData?.vendor_id === "undefined" ||
+      userData?.vendor_id === "null"
+    ) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Vendor ID is missing. Please register as a vendor first.",
+      });
+      return;
+    }
+
     const formData = new FormData();
     // Always append image if it's a File object (new upload)
     if (vendorData.image instanceof File) {
@@ -185,7 +236,7 @@ function Settings() {
 
     try {
       await apiInstance.patch(
-        `vendor-shop-settings/${userData?.vendor_id}/`,
+        `vendor-shop-settings/${userData.vendor_id}/`,
         formData,
         {
           headers: {
