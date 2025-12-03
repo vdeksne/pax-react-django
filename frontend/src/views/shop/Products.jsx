@@ -99,11 +99,20 @@ function Products() {
             );
           } else if (errorReason?.code === "ERR_NETWORK") {
             setError(
-              "Unable to connect to server. Please check your connection."
+              "Unable to connect to server. The backend may be down or unreachable. Please try again later."
+            );
+          } else if (
+            errorReason?.message?.includes("CORS") ||
+            errorReason?.message?.includes("blocked")
+          ) {
+            setError(
+              "CORS error: Backend is not allowing requests from this domain. Please check backend CORS configuration."
             );
           } else {
             setError(
-              "Failed to load products. Please try refreshing the page."
+              `Failed to load products: ${
+                errorReason?.message || "Unknown error"
+              }. Please try refreshing the page.`
             );
           }
           setProducts([]);

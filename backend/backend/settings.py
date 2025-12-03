@@ -276,14 +276,38 @@ EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
 DEFAULT_FROM_EMAIL = " viktorijadeksne@gmail.com"
 SERVER_EMAIL = " viktorijadeksne@gmail.com"
 
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
+# CORS Configuration
+# NOTE: CORS_ALLOW_ALL_ORIGINS and CORS_ALLOW_CREDENTIALS cannot both be True
+# If credentials are needed, use CORS_ALLOWED_ORIGINS instead
+CORS_ALLOW_CREDENTIALS = False  # Set to False since we're not using credentials
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins in production
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://pax-connect.netlify.app",
+]
+# Additional CORS headers for better compatibility
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+# Allow all methods
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
 
