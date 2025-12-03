@@ -12,45 +12,107 @@ function Earning() {
   const [earningChartData, setEarningChartData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [vendorStatusChecked, setVendorStatusChecked] = useState(false);
 
   const axios = apiInstance;
   const userData = UserData();
 
-  if (UserData()?.vendor_id === 0) {
-    window.location.href = "/vendor/register/";
-  }
+  // Validate vendor_id - check for invalid values
+  const vendorId = userData?.vendor_id;
+  const isValidVendorId = vendorId && 
+    vendorId !== null && 
+    vendorId !== 0 && 
+    vendorId !== 'undefined' && 
+    vendorId !== 'null' &&
+    vendorId !== undefined;
+
+  // Check vendor status asynchronously
+  useEffect(() => {
+    const checkVendorStatus = async () => {
+      if (vendorStatusChecked) return;
+      
+      if (!isValidVendorId) {
+        // Try to check vendor status from backend
+        try {
+          const response = await axios.get(`check-vendor-status/`);
+          if (response.data && response.data.vendor_id && response.data.vendor_id !== 0) {
+            // Vendor exists, but userData might not be updated yet
+            setVendorStatusChecked(true);
+            return;
+          }
+        } catch (err) {
+          // If check fails, proceed with redirect
+        }
+        
+        // No valid vendor ID, redirect to register
+        setIsRedirecting(true);
+        window.location.href = "/vendor/register/";
+        return;
+      }
+      
+      setVendorStatusChecked(true);
+    };
+
+    checkVendorStatus();
+  }, [vendorId, vendorStatusChecked, isValidVendorId, axios]);
 
   useEffect(() => {
     const fetchEarningStats = async () => {
+      // Don't fetch if redirecting or no valid vendor ID
+      if (isRedirecting || !isValidVendorId || !vendorStatusChecked) {
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
 
         const [statsResponse, monthlyResponse] = await Promise.all([
-          axios.get(`vendor-earning/${userData?.vendor_id}/`),
-          axios.get(`vendor-monthly-earning/${userData?.vendor_id}/`),
+          axios.get(`vendor-earning/${vendorId}/`),
+          axios.get(`vendor-monthly-earning/${vendorId}/`),
         ]);
 
-        if (statsResponse.data && Array.isArray(statsResponse.data)) {
-          setEarningStats(statsResponse.data[0] || null);
+        // Handle stats response - backend returns array
+        if (statsResponse.data) {
+          if (Array.isArray(statsResponse.data)) {
+            setEarningStats(statsResponse.data[0] || null);
+          } else if (typeof statsResponse.data === 'object') {
+            // Handle if backend returns object directly
+            setEarningStats(statsResponse.data);
+          }
         }
 
-        if (monthlyResponse.data && Array.isArray(monthlyResponse.data)) {
-          setEarningTracker(monthlyResponse.data);
-          setEarningChartData(monthlyResponse.data);
+        // Handle monthly response - backend returns array
+        if (monthlyResponse.data) {
+          if (Array.isArray(monthlyResponse.data)) {
+            setEarningTracker(monthlyResponse.data);
+            setEarningChartData(monthlyResponse.data);
+          } else if (typeof monthlyResponse.data === 'object') {
+            // Handle if backend returns object
+            const monthlyArray = Array.isArray(monthlyResponse.data) 
+              ? monthlyResponse.data 
+              : [monthlyResponse.data];
+            setEarningTracker(monthlyArray);
+            setEarningChartData(monthlyArray);
+          }
         }
       } catch (err) {
         console.error("Error fetching earning stats:", err);
-        setError("Failed to load earning statistics");
+        setError("Failed to load earning statistics. Please try again later.");
+        // Set empty data on error
+        setEarningStats(null);
+        setEarningTracker([]);
+        setEarningChartData(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (userData?.vendor_id) {
+    if (isValidVendorId && vendorStatusChecked && !isRedirecting) {
       fetchEarningStats();
     }
-  }, [userData?.vendor_id, axios]);
+  }, [vendorId, isValidVendorId, vendorStatusChecked, isRedirecting, axios]);
 
   const months = earningChartData?.map((item) => item.month) || [];
   const revenue = earningChartData?.map((item) => item.total_earning) || [];
@@ -68,6 +130,27 @@ function Earning() {
       },
     ],
   };
+
+  // Show loading or redirecting state
+  if (isRedirecting || !vendorStatusChecked) {
+    return (
+      <div className="container-fluid" id="main">
+        <div className="row row-offcanvas row-offcanvas-left h-100">
+          <Sidebar />
+          <div className="col-md-9 col-lg-10 main">
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{ height: "100vh" }}
+            >
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -95,8 +178,15 @@ function Earning() {
         <div className="row row-offcanvas row-offcanvas-left h-100">
           <Sidebar />
           <div className="col-md-9 col-lg-10 main">
-            <div className="alert alert-danger" role="alert">
-              {error}
+            <div className="alert alert-danger mt-4" role="alert">
+              <h5>Error Loading Earnings</h5>
+              <p>{error}</p>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
             </div>
           </div>
         </div>
