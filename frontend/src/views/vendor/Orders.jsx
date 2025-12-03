@@ -18,18 +18,38 @@ function Orders() {
 
   useEffect(() => {
     const fetchData = async () => {
+      // Don't fetch if vendor_id is missing or invalid
+      if (
+        !userData?.vendor_id ||
+        userData?.vendor_id === 0 ||
+        userData?.vendor_id === "undefined" ||
+        userData?.vendor_id === "null"
+      ) {
+        setOrders([]);
+        return;
+      }
+
       try {
         const response = await axios.get(
-          `vendor/orders/${userData?.vendor_id}/`
+          `vendor/orders/${userData.vendor_id}/`
         );
         setOrders(response.data);
       } catch (error) {
         console.error("Error fetching data:", error);
+        setOrders([]);
       }
     };
 
-    fetchData();
-  }, []);
+    // Only fetch if vendor_id is valid
+    if (
+      userData?.vendor_id &&
+      userData?.vendor_id !== 0 &&
+      userData?.vendor_id !== "undefined" &&
+      userData?.vendor_id !== "null"
+    ) {
+      fetchData();
+    }
+  }, [userData?.vendor_id]);
   return (
     <div className="container-fluid" id="main">
       <div className="row row-offcanvas row-offcanvas-left h-100">

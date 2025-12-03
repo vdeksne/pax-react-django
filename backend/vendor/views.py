@@ -104,10 +104,23 @@ class OrdersAPIView(generics.ListAPIView):
     permission_classes = (AllowAny,)
 
     def get_queryset(self):
-        vendor_id = self.kwargs['vendor_id']
-        vendor = Vendor.objects.get(id=vendor_id)
-        orders = CartOrder.objects.filter(vendor=vendor, payment_status="paid")
-        return orders
+        vendor_id = self.kwargs.get('vendor_id')
+        
+        # Validate vendor_id
+        if not vendor_id or vendor_id == 'undefined' or vendor_id == 'null':
+            return CartOrder.objects.none()  # Return empty queryset
+        
+        try:
+            vendor_id = int(vendor_id)
+        except (ValueError, TypeError):
+            return CartOrder.objects.none()  # Return empty queryset for invalid ID
+        
+        try:
+            vendor = Vendor.objects.get(id=vendor_id)
+            orders = CartOrder.objects.filter(vendor=vendor, payment_status="paid")
+            return orders
+        except Vendor.DoesNotExist:
+            return CartOrder.objects.none()  # Return empty queryset if vendor doesn't exist
 
 
 class RevenueAPIView(generics.ListAPIView):
@@ -399,13 +412,35 @@ class OrderDetailAPIView(generics.RetrieveAPIView):
     permission_classes = (AllowAny,)
 
     def get_object(self):
-        vendor_id = self.kwargs['vendor_id']
-        order_oid = self.kwargs['order_oid']
+        vendor_id = self.kwargs.get('vendor_id')
+        order_oid = self.kwargs.get('order_oid')
 
-        vendor = Vendor.objects.get(id=vendor_id)
-        order = CartOrder.objects.get(
-            vendor=vendor, payment_status="paid", oid=order_oid)
-        return order
+        # Validate vendor_id
+        if not vendor_id or vendor_id == 'undefined' or vendor_id == 'null':
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Vendor ID is required")
+        
+        if not order_oid:
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Order ID is required")
+
+        try:
+            vendor_id = int(vendor_id)
+        except (ValueError, TypeError):
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Invalid vendor ID")
+
+        try:
+            vendor = Vendor.objects.get(id=vendor_id)
+            order = CartOrder.objects.get(
+                vendor=vendor, payment_status="paid", oid=order_oid)
+            return order
+        except Vendor.DoesNotExist:
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Vendor not found")
+        except CartOrder.DoesNotExist:
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Order not found")
 
 
 class Earning(generics.ListAPIView):
