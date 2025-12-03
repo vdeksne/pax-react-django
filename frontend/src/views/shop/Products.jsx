@@ -64,16 +64,20 @@ function Products() {
     const fetchAllData = async () => {
       try {
         // Use Promise.allSettled to handle partial failures gracefully
+        // Use shorter timeout for categories (non-critical)
         const [productsResult, categoryResult] = await Promise.allSettled([
           apiInstance.get("products/", { timeout: 20000 }),
-          apiInstance.get("category/", { timeout: 20000 }),
+          apiInstance.get("category/", { timeout: 10000 }), // 10s for categories
         ]);
 
         // Handle products
         if (productsResult.status === "fulfilled") {
           setProducts(productsResult.value.data);
         } else {
-          console.warn("Failed to load products:", productsResult.reason);
+          // Only log in development - categories/products are non-critical
+          if (import.meta.env.DEV) {
+            console.warn("Failed to load products:", productsResult.reason);
+          }
           setProducts([]); // Set empty array so page still renders
         }
 
@@ -81,7 +85,11 @@ function Products() {
         if (categoryResult.status === "fulfilled") {
           setCategory(categoryResult.value.data);
         } else {
-          console.warn("Failed to load categories:", categoryResult.reason);
+          // Silently handle category loading failures - non-critical feature
+          // Only log in development mode
+          if (import.meta.env.DEV) {
+            console.warn("Failed to load categories:", categoryResult.reason);
+          }
           setCategory([]); // Set empty array so page still renders
         }
 

@@ -84,34 +84,54 @@ function GetCurrentAddress() {
                     API_BASE_URL || import.meta.env.VITE_API_URL || "";
 
                   if (backendUrl) {
-                    const proxyResponse = await fetch(
-                      `${backendUrl}geocode/reverse/?lat=${lat}&lon=${lon}`,
-                      {
-                        method: "GET",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
-                      }
+                    // Create AbortController for timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(
+                      () => controller.abort(),
+                      8000
                     );
-                    if (proxyResponse.ok) {
-                      const data = await proxyResponse.json();
-                      if (data && data.address) {
-                        const country =
-                          data.address.country ||
-                          data.address.country_code?.toUpperCase() ||
-                          "";
-                        return country;
+
+                    try {
+                      const proxyResponse = await fetch(
+                        `${backendUrl}geocode/reverse/?lat=${lat}&lon=${lon}`,
+                        {
+                          method: "GET",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          signal: controller.signal,
+                        }
+                      );
+
+                      clearTimeout(timeoutId);
+
+                      if (proxyResponse.ok) {
+                        const data = await proxyResponse.json();
+                        if (data && data.address) {
+                          const country =
+                            data.address.country ||
+                            data.address.country_code?.toUpperCase() ||
+                            "";
+                          return country;
+                        }
                       }
+                      // If not ok (404, 500, etc.), silently continue to fallback
+                    } catch (fetchError) {
+                      clearTimeout(timeoutId);
+                      // Silently handle fetch errors (404, timeout, network) - continue to fallback
+                      throw fetchError; // Re-throw to be caught by outer catch
                     }
                   }
                 } catch (proxyError) {
-                  // Backend proxy not available, continue to direct API call
+                  // Backend proxy not available (404 or timeout) - silently continue to fallback
+                  // Only log in development mode
                   if (import.meta.env.DEV) {
                     console.debug(
                       "Backend geocoding proxy not available:",
                       proxyError
                     );
                   }
+                  // Don't throw - continue to direct API call fallback
                 }
 
                 // Fallback: Try direct Nominatim API call (may fail due to CORS)
