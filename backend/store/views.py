@@ -764,6 +764,20 @@ class StripeCheckoutView(generics.CreateAPIView):
             elif order.buyer and order.buyer.email:
                 customer_email = order.buyer.email
             
+            # Build a safe base URL for Stripe redirects
+            base_url = (getattr(settings, "SITE_URL", "") or "").strip()
+            if not base_url.startswith("http"):
+                # Fall back to request host if SITE_URL is missing/invalid
+                base_url = request.build_absolute_uri("/").rstrip("/")
+            else:
+                base_url = base_url.rstrip("/")
+
+            if not base_url.startswith("http"):
+                return Response(
+                    {"error": "Invalid SITE_URL for Stripe redirects"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
             # Build checkout session parameters
             session_params = {
                 'payment_method_types': ['card'],
@@ -780,8 +794,8 @@ class StripeCheckoutView(generics.CreateAPIView):
                     }
                 ],
                 'mode': 'payment',
-                'success_url': settings.SITE_URL+'/payment-success/'+ order.oid +'?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url': settings.SITE_URL+'/?session_id={CHECKOUT_SESSION_ID}',
+                'success_url': f"{base_url}/payment-success/{order.oid}?session_id={{CHECKOUT_SESSION_ID}}",
+                'cancel_url': f"{base_url}/?session_id={{CHECKOUT_SESSION_ID}}",
             }
             
             # Only include customer_email if we have a valid email
