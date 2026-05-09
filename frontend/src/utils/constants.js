@@ -17,5 +17,4 @@ export const API_BASE_URL = API_BASE_URL_VALUE;
 export const PAYPAL_CLIENT_ID =
   "AZ29JKSz9rfhsLWVMqBtHCzGbAm4IRADlPYTobLFPOV6Oq1_3fADVl4lbaUqSORT08AvWjqIxQ";
 export const SERVER_URL =
-  import.meta.env.VITE_SERVER_URL ||
-  "desirable-communication-production.up.railway.app";
+  import.meta.env.VITE_SERVER_URL || "127.0.0.1:8000";

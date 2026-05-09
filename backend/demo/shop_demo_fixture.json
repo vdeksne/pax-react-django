@@ -1,0 +1,541 @@
+[
+  {
+    "model": "userauths.user",
+    "fields": {
+      "password": "pbkdf2_sha256$600000$KSpJReQsqmJJcWonDp4321$5PMR5yqPTuLcj3fS7a7plVs5RF+IITrYKgfV3WiVXHU=",
+      "last_login": "2025-06-09T14:57:32.190Z",
+      "is_superuser": true,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2025-05-26T07:48:47.585Z",
+      "username": "demo_admin",
+      "email": "admin@demo.pax.shop",
+      "full_name": "test (demo)",
+      "phone": "",
+      "otp": null,
+      "reset_token": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "userauths.user",
+    "fields": {
+      "password": "pbkdf2_sha256$600000$KSpJReQsqmJJcWonDp4321$5PMR5yqPTuLcj3fS7a7plVs5RF+IITrYKgfV3WiVXHU=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-06-09T14:53:10.550Z",
+      "username": "demo_vendor",
+      "email": "vendor@demo.pax.shop",
+      "full_name": "viktorijadeksne (demo)",
+      "phone": "",
+      "otp": null,
+      "reset_token": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "userauths.user",
+    "fields": {
+      "password": "pbkdf2_sha256$600000$KSpJReQsqmJJcWonDp4321$5PMR5yqPTuLcj3fS7a7plVs5RF+IITrYKgfV3WiVXHU=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-06-10T04:59:47.531Z",
+      "username": "demo_user3",
+      "email": "user3@demo.pax.shop",
+      "full_name": "k (demo)",
+      "phone": "",
+      "otp": null,
+      "reset_token": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "userauths.user",
+    "fields": {
+      "password": "pbkdf2_sha256$600000$KSpJReQsqmJJcWonDp4321$5PMR5yqPTuLcj3fS7a7plVs5RF+IITrYKgfV3WiVXHU=",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-06-10T06:32:28.800Z",
+      "username": "demo_buyer",
+      "email": "buyer@demo.pax.shop",
+      "full_name": "johnsmith (demo)",
+      "phone": "",
+      "otp": null,
+      "reset_token": null,
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "userauths.profile",
+    "pk": 1,
+    "fields": {
+      "user": [
+        "admin@demo.pax.shop"
+      ],
+      "image": "accounts/users/profile_mUH53oQ.jpeg",
+      "full_name": "Demo profile",
+      "about": "",
+      "gender": null,
+      "country": "Demo Country",
+      "city": "Demo City",
+      "state": "",
+      "address": "",
+      "newsletter": false,
+      "type": null,
+      "date": "2025-05-26T07:48:47.735Z",
+      "pid": "jzpkvhfbch"
+    }
+  },
+  {
+    "model": "userauths.profile",
+    "pk": 2,
+    "fields": {
+      "user": [
+        "vendor@demo.pax.shop"
+      ],
+      "image": "https://lh3.googleusercontent.com/a/ACg8ocJUMh340P5RoSkewpJbOzQusjY6V30lCHxiguJ3afOMqyOG-2KD=s96-c",
+      "full_name": "Demo profile",
+      "about": "",
+      "gender": null,
+      "country": "Demo Country",
+      "city": "Demo City",
+      "state": "",
+      "address": "",
+      "newsletter": false,
+      "type": null,
+      "date": "2025-06-09T14:53:10.564Z",
+      "pid": "tvzgszhunm"
+    }
+  },
+  {
+    "model": "userauths.profile",
+    "pk": 3,
+    "fields": {
+      "user": [
+        "user3@demo.pax.shop"
+      ],
+      "image": "default/default-user.jpg",
+      "full_name": "Demo profile",
+      "about": "",
+      "gender": null,
+      "country": "Demo Country",
+      "city": "Demo City",
+      "state": "",
+      "address": "",
+      "newsletter": false,
+      "type": null,
+      "date": "2025-06-10T04:59:47.587Z",
+      "pid": "bxpkddenvn"
+    }
+  },
+  {
+    "model": "userauths.profile",
+    "pk": 4,
+    "fields": {
+      "user": [
+        "buyer@demo.pax.shop"
+      ],
+      "image": "accounts/users/profile_dbb5prR.jpeg",
+      "full_name": "Demo profile",
+      "about": "",
+      "gender": null,
+      "country": "Demo Country",
+      "city": "Demo City",
+      "state": "",
+      "address": "",
+      "newsletter": false,
+      "type": null,
+      "date": "2025-06-10T06:32:28.814Z",
+      "pid": "nedusurcuo"
+    }
+  },
+  {
+    "model": "vendor.vendor",
+    "pk": 1,
+    "fields": {
+      "user": [
+        "vendor@demo.pax.shop"
+      ],
+      "image": "user_2/2.png",
+      "name": "Pax",
+      "email": "vendor@demo.pax.shop",
+      "description": "Demo shop description.",
+      "mobile": "",
+      "verified": true,
+      "active": true,
+      "vid": "zyolgjvbvx",
+      "date": "2025-06-09T14:54:16.168Z",
+      "slug": "pax"
+    }
+  },
+  {
+    "model": "vendor.vendor",
+    "pk": 2,
+    "fields": {
+      "user": [
+        "admin@demo.pax.shop"
+      ],
+      "image": "user_1/demo_pax_hat.png",
+      "name": "Victory",
+      "email": "vendor@demo.pax.shop",
+      "description": "Demo shop description.",
+      "mobile": "",
+      "verified": true,
+      "active": true,
+      "vid": "bblpuorcpp",
+      "date": "2025-06-09T15:32:44.555Z",
+      "slug": "demo-vendor-2"
+    }
+  },
+  {
+    "model": "addon.configsettings",
+    "pk": 1,
+    "fields": {
+      "view_more": "View All",
+      "currency_sign": "$",
+      "currency_abbreviation": "USD",
+      "service_fee_percentage": 5,
+      "service_fee_flat_rate": "0.70",
+      "service_fee_charge_type": "percentage",
+      "enforce_2fa": true,
+      "activate_affiliate_system": true,
+      "send_email_notifications": false
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 1,
+    "fields": {
+      "title": "Hats",
+      "image": "user_1/demo_pax_hat.png",
+      "active": true,
+      "slug": "hats"
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 2,
+    "fields": {
+      "title": "Hoodies",
+      "image": "user_1/demo_pax_hoodie.jpg",
+      "active": true,
+      "slug": "hoodies"
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 3,
+    "fields": {
+      "title": "Bags",
+      "image": "user_1/1_vfhfDxa.jpg",
+      "active": true,
+      "slug": "bags"
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 4,
+    "fields": {
+      "title": "Shirts",
+      "image": "user_1/demo_pax_tshirt.png",
+      "active": true,
+      "slug": "shirts"
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 5,
+    "fields": {
+      "title": "Socks",
+      "image": "user_1/1_mwQFTtd.jpg",
+      "active": true,
+      "slug": "socks"
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 6,
+    "fields": {
+      "title": "Fine Art",
+      "image": "user_1/1_m2aepCH.jpg",
+      "active": true,
+      "slug": "art"
+    }
+  },
+  {
+    "model": "store.product",
+    "pk": 1,
+    "fields": {
+      "title": "Pax Hat",
+      "image": "user_1/demo_pax_hat.png",
+      "description": "",
+      "category": 1,
+      "tags": null,
+      "brand": null,
+      "price": "10.00",
+      "old_price": "20.00",
+      "shipping_amount": "1.00",
+      "stock_qty": 100,
+      "in_stock": true,
+      "status": "published",
+      "type": "regular",
+      "featured": true,
+      "hot_deal": false,
+      "special_offer": false,
+      "digital": false,
+      "views": 10,
+      "orders": 0,
+      "saved": 0,
+      "rating": null,
+      "vendor": 2,
+      "sku": "SKU39621",
+      "pid": "cmbhlmnzle",
+      "slug": "pax-hat",
+      "date": "2025-06-09T15:32:57Z"
+    }
+  },
+  {
+    "model": "store.product",
+    "pk": 2,
+    "fields": {
+      "title": "Pax T-shirt",
+      "image": "user_1/demo_pax_tshirt.png",
+      "description": "Elevate your everyday look with this classic T-shirt. Made from soft, breathable fabric, it's designed for all-day comfort and effortless style. Whether you're dressing it up or keeping it casual, this versatile tee is a wardrobe essential.",
+      "category": 4,
+      "tags": "shirt",
+      "brand": null,
+      "price": "20.00",
+      "old_price": "50.00",
+      "shipping_amount": "1.00",
+      "stock_qty": 100,
+      "in_stock": true,
+      "status": "published",
+      "type": "regular",
+      "featured": true,
+      "hot_deal": false,
+      "special_offer": false,
+      "digital": false,
+      "views": 0,
+      "orders": 0,
+      "saved": 0,
+      "rating": 5,
+      "vendor": 2,
+      "sku": "SKU67956",
+      "pid": "xpgkmakbzj",
+      "slug": "pax-t-shirt",
+      "date": "2025-06-09T16:30:43Z"
+    }
+  },
+  {
+    "model": "store.product",
+    "pk": 3,
+    "fields": {
+      "title": "Pax Hoodie",
+      "image": "user_1/demo_pax_hoodie.jpg",
+      "description": "",
+      "category": 2,
+      "tags": null,
+      "brand": null,
+      "price": "100.00",
+      "old_price": "120.00",
+      "shipping_amount": "1.00",
+      "stock_qty": 200,
+      "in_stock": true,
+      "status": "published",
+      "type": "regular",
+      "featured": true,
+      "hot_deal": false,
+      "special_offer": false,
+      "digital": false,
+      "views": 0,
+      "orders": 0,
+      "saved": 0,
+      "rating": null,
+      "vendor": 2,
+      "sku": "SKU99824",
+      "pid": "cbqnrbybih",
+      "slug": "pax-hoodie",
+      "date": "2025-06-09T16:34:02Z"
+    }
+  },
+  {
+    "model": "store.product",
+    "pk": 4,
+    "fields": {
+      "title": "Pax Socks",
+      "image": "user_1/1_mwQFTtd.jpg",
+      "description": "Comfort with attitude. The Pax Socks offer breathable support and a clean white design accented with the Pax emblem. Perfect for gym sessions, casual wear, or adding personality to your everyday outfits.",
+      "category": 5,
+      "tags": "null",
+      "brand": "null",
+      "price": "10.00",
+      "old_price": "20.00",
+      "shipping_amount": "0.97",
+      "stock_qty": 20,
+      "in_stock": true,
+      "status": "published",
+      "type": "regular",
+      "featured": true,
+      "hot_deal": false,
+      "special_offer": false,
+      "digital": false,
+      "views": 0,
+      "orders": 0,
+      "saved": 0,
+      "rating": null,
+      "vendor": 2,
+      "sku": "SKU41683",
+      "pid": "oxeegvbgfg",
+      "slug": "pax-socks",
+      "date": "2025-06-09T16:35:20Z"
+    }
+  },
+  {
+    "model": "store.product",
+    "pk": 5,
+    "fields": {
+      "title": "Pax Tote Bag",
+      "image": "user_1/1_vfhfDxa.jpg",
+      "description": "Carry confidence wherever you go. The Pax Tote Bag blends practicality with bold visual identity. Featuring a vibrant golden \u201cX\u201d and the playful phrase \u201cTote-ally Fine,\u201d it\u2019s designed for everyday errands, travel, school, or work. Lightweight yet durable, this tote brings modern streetwear flair to your daily essentials.",
+      "category": 3,
+      "tags": "null",
+      "brand": "null",
+      "price": "10.00",
+      "old_price": "15.00",
+      "shipping_amount": "1.00",
+      "stock_qty": 100,
+      "in_stock": true,
+      "status": "published",
+      "type": "regular",
+      "featured": true,
+      "hot_deal": false,
+      "special_offer": false,
+      "digital": false,
+      "views": 0,
+      "orders": 0,
+      "saved": 0,
+      "rating": null,
+      "vendor": 2,
+      "sku": "SKU30242",
+      "pid": "bkkqyicnvz",
+      "slug": "pax-tote-bag",
+      "date": "2025-06-09T16:35:55Z"
+    }
+  },
+  {
+    "model": "store.product",
+    "pk": 6,
+    "fields": {
+      "title": "Pax Poster -  Banksy",
+      "image": "user_1/1_m2aepCH.jpg",
+      "description": "Bring iconic street-art energy to your space. This Banksy-inspired Art Poster makes a powerful statement with its clean monochrome composition and striking silhouette. Perfect for modern homes, studios, or galleries, it\u2019s printed on premium, museum-grade paper that elevates any interior.",
+      "category": 6,
+      "tags": "null",
+      "brand": "null",
+      "price": "50.00",
+      "old_price": "100.00",
+      "shipping_amount": "1.00",
+      "stock_qty": 100,
+      "in_stock": true,
+      "status": "published",
+      "type": "regular",
+      "featured": true,
+      "hot_deal": false,
+      "special_offer": false,
+      "digital": false,
+      "views": 0,
+      "orders": 0,
+      "saved": 0,
+      "rating": 5,
+      "vendor": 2,
+      "sku": "SKU20504",
+      "pid": "bchtgudxfv",
+      "slug": "pax-poster-banksy",
+      "date": "2025-06-09T16:36:43Z"
+    }
+  },
+  {
+    "model": "store.product",
+    "pk": 10,
+    "fields": {
+      "title": "Fika Hoodie",
+      "image": "user_1/demo_fika_hoodie.png",
+      "description": "Elevate your everyday look with this classic T-shirt. Made from soft, breathable fabric, it's designed for all-day comfort and effortless style. Whether you're dressing it up or keeping it casual, this versatile tee is a wardrobe essential.",
+      "category": 2,
+      "tags": "Hoodie",
+      "brand": "Pax",
+      "price": "100.00",
+      "old_price": "150.00",
+      "shipping_amount": "1.00",
+      "stock_qty": 10,
+      "in_stock": true,
+      "status": "published",
+      "type": "regular",
+      "featured": false,
+      "hot_deal": false,
+      "special_offer": false,
+      "digital": false,
+      "views": 0,
+      "orders": 0,
+      "saved": 0,
+      "rating": null,
+      "vendor": 2,
+      "sku": "SKU60355",
+      "pid": "bzechxsrmh",
+      "slug": "fika-hoodie-6mug",
+      "date": "2025-06-10T06:48:45.290Z"
+    }
+  },
+  {
+    "model": "store.review",
+    "pk": 1,
+    "fields": {
+      "user": [
+        "vendor@demo.pax.shop"
+      ],
+      "product": 2,
+      "review": "Amazing!",
+      "reply": null,
+      "rating": 5,
+      "active": false,
+      "date": "2025-06-10T06:39:56.245Z",
+      "helpful": [],
+      "not_helpful": []
+    }
+  },
+  {
+    "model": "store.review",
+    "pk": 2,
+    "fields": {
+      "user": [
+        "admin@demo.pax.shop"
+      ],
+      "product": 6,
+      "review": "Amazing!",
+      "reply": null,
+      "rating": 5,
+      "active": false,
+      "date": "2025-12-03T10:06:33.504Z",
+      "helpful": [],
+      "not_helpful": []
+    }
+  }
+]

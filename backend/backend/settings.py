@@ -19,6 +19,9 @@ import dj_database_url
 env = Env()
 env.read_env()
 
+# Local / conference demo: SQLite + bundled fixture (no PostgreSQL). Set DEMO_MODE=false for production.
+DEMO_MODE = env.bool("DEMO_MODE", default=False)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -121,12 +124,22 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DEMO_MODE:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "demo" / "demo.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+    db_from_env = dj_database_url.config(conn_max_age=600)
+    DATABASES["default"].update(db_from_env)
 
 # Only use Railway PostgreSQL if DATABASE_URL is set and not using internal hostname
 # Internal Railway hostnames (like postgres.railway.internal) only work within Railway's network
@@ -146,14 +159,6 @@ if db_from_env:
         }
         DATABASES['default'] = db_from_env
     # If it's an internal hostname, keep using SQLite for local development
-
-# if os.environ.get("DJANGO_DEVELOPMENT") == "True":
-#     DATABASES = {
-#         "default": {
-#             "ENGINE": "django.db.backends.sqlite3",
-#             "NAME": BASE_DIR / "db.sqlite3",
-#         }
-#     }
 
 
 # Password validation
@@ -194,55 +199,75 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+if DEMO_MODE:
+    # Must be a relative URL path (e.g. /media/) so urlpatterns += static(MEDIA_URL, ...) works.
+    # AbsoluteMediaField + request.build_absolute_uri() turns API image links into full URLs for Vite.
+    MEDIA_URL = "/media/"
+    # When demo DB paths are not on disk: 'picsum' = stable placeholder images; 's3' = prefix with DEMO_REMOTE_MEDIA_BASE.
+    DEMO_MEDIA_FALLBACK = env.str("DEMO_MEDIA_FALLBACK", default="picsum")
+    DEMO_REMOTE_MEDIA_BASE = env.str(
+        "DEMO_REMOTE_MEDIA_BASE",
+        default="https://pax-ecommerce-vdeksne-bucket.s3.amazonaws.com",
+    )
+else:
+    MEDIA_URL = 'media/'
+    DEMO_REMOTE_MEDIA_BASE = env.str("DEMO_REMOTE_MEDIA_BASE", default="")
+    DEMO_MEDIA_FALLBACK = ""
 
-# AWS Configs
-try:
-    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
-except:
-    AWS_ACCESS_KEY_ID = ""
-
-try:
-    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
-except:
-    AWS_SECRET_ACCESS_KEY = ""
-
-try:
-    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
-except:
-    AWS_STORAGE_BUCKET_NAME = ""
-
-# Only use S3 if valid credentials are provided (not placeholders)
-USE_S3 = (
-    AWS_ACCESS_KEY_ID 
-    and AWS_SECRET_ACCESS_KEY 
-    and AWS_STORAGE_BUCKET_NAME
-    and AWS_ACCESS_KEY_ID != "placeholder"
-    and AWS_SECRET_ACCESS_KEY != "placeholder"
-    and AWS_STORAGE_BUCKET_NAME != "placeholder"
-)
-
-if USE_S3:
+if DEMO_MODE:
+    AWS_ACCESS_KEY_ID = env.str("AWS_ACCESS_KEY_ID", default="")
+    AWS_SECRET_ACCESS_KEY = env.str("AWS_SECRET_ACCESS_KEY", default="")
+    AWS_STORAGE_BUCKET_NAME = env.str("AWS_STORAGE_BUCKET_NAME", default="")
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = 'public-read'
-    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-    
-    # Static files location
-    STATIC_LOCATION = 'static'
-    STATICFILES_STORAGE = 'backend.storages.StaticStorage'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
-    
-    # Media files location (for user uploads)
-    MEDIA_LOCATION = 'media'
-    DEFAULT_FILE_STORAGE = 'backend.storages.MediaStorage'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIA_LOCATION}/'
-else:
-    # Use local file storage for development
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
     STATIC_URL = 'static/'
+else:
+    # AWS Configs
+    try:
+        AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+    except Exception:
+        AWS_ACCESS_KEY_ID = ""
+
+    try:
+        AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+    except Exception:
+        AWS_SECRET_ACCESS_KEY = ""
+
+    try:
+        AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+    except Exception:
+        AWS_STORAGE_BUCKET_NAME = ""
+
+    # Only use S3 if valid credentials are provided (not placeholders)
+    USE_S3 = (
+        AWS_ACCESS_KEY_ID
+        and AWS_SECRET_ACCESS_KEY
+        and AWS_STORAGE_BUCKET_NAME
+        and AWS_ACCESS_KEY_ID != "placeholder"
+        and AWS_SECRET_ACCESS_KEY != "placeholder"
+        and AWS_STORAGE_BUCKET_NAME != "placeholder"
+    )
+
+    if USE_S3:
+        AWS_S3_FILE_OVERWRITE = False
+        AWS_DEFAULT_ACL = 'public-read'
+        AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+        AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+        STATIC_LOCATION = 'static'
+        STATICFILES_STORAGE = 'backend.storages.StaticStorage'
+        STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
+
+        MEDIA_LOCATION = 'media'
+        DEFAULT_FILE_STORAGE = 'backend.storages.MediaStorage'
+        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIA_LOCATION}/'
+    else:
+        DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+        STATIC_URL = 'static/'
 
 
 # Default primary key field type

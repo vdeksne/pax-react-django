@@ -2,6 +2,22 @@ import { Link } from "react-router-dom";
 import "../../../assets/css/products.css";
 import PropTypes from "prop-types";
 
+/** Local Pax-style icons (black + orange) — keyed by API category slug */
+const CATEGORY_ICON_SRC = {
+  hats: "/assets/categories/hats.svg",
+  hoodies: "/assets/categories/hoodies.svg",
+  bags: "/assets/categories/bags.svg",
+  shirts: "/assets/categories/shirts.svg",
+  socks: "/assets/categories/socks.svg",
+  art: "/assets/categories/art.svg",
+};
+
+function categoryImageUrl(category) {
+  const local = CATEGORY_ICON_SRC[category.slug];
+  if (local) return local;
+  return category.image;
+}
+
 const CategoryList = ({ categories }) => {
   if (!Array.isArray(categories) || categories.length === 0) {
     return (
@@ -47,15 +63,15 @@ const CategoryList = ({ categories }) => {
           >
             <img
               src={
-                c.image ||
+                categoryImageUrl(c) ||
                 "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png"
               }
               alt={c.title}
-              className="img-fluid rounded-circle"
+              className="img-fluid"
               style={{
                 width: "clamp(60px, 10vw, 100px)",
                 height: "clamp(60px, 10vw, 100px)",
-                objectFit: "cover",
+                objectFit: "contain",
               }}
               loading="lazy"
               decoding="async"

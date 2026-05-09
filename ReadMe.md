@@ -106,6 +106,22 @@ E-commerce Platform. A modern e-commerce platform built with React and Django, f
    python manage.py runserver
    ```
 
+   **Local demo (SQLite + snapshot data, no PostgreSQL)**  
+   Add `DEMO_MODE=True` to `backend/.env`. This uses `demo/demo.sqlite3` instead of `DATABASE_URL` and local file storage instead of S3. Then load the bundled fixture (anonymized copy of the production catalog and users):
+
+   ```bash
+   cd backend
+   chmod +x demo/load_demo.sh   # once
+   ./demo/load_demo.sh
+   python manage.py runserver
+   ```
+
+   The load script runs **`download_demo_media --recover-missing`**, which reads every `image` path in `demo/shop_demo_fixture.json`, then tries: **`--from-dir`** (if set), **S3**, then **HTTPS**. Files land in `backend/media/`. **`--recover-missing`** fills paths that are gone from S3 by copying **stand-in** files from whatever images you already have locally (not the real lost originals—use **`--from-dir`** with a real backup for that). Re-run anytime (existing non-empty files are skipped). Anything still missing after that uses Picsum (`DEMO_MEDIA_FALLBACK`).
+
+   Point the frontend at `http://127.0.0.1:8000/api/v1/` (see `frontend/src/utils/constants.js`). With `DEMO_MODE`, images that are not under `backend/media/` use **placeholder photos** by default (`DEMO_MEDIA_FALLBACK=picsum`, stable per file path). To try real files from a public bucket instead, set `DEMO_MEDIA_FALLBACK=s3` and `DEMO_REMOTE_MEDIA_BASE=…`.
+
+   Demo logins use password **`demo`** (for example `vendor@demo.pax.shop` / `demo`). For Railway/production again, set `DEMO_MODE=False` so `DATABASE_URL` is used.
+
 3. **Frontend Setup**
 
    ```bash
@@ -122,6 +138,8 @@ E-commerce Platform. A modern e-commerce platform built with React and Django, f
    ```
    DEBUG=True
    SECRET_KEY=your_secret_key
+   DEMO_MODE=True
+   # When DEMO_MODE is True, DATABASE_URL is not used (local demo SQLite + fixture).
    DATABASE_URL=postgresql://user:password@localhost:5432/paxshop
    ```
 

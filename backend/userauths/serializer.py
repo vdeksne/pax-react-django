@@ -3,7 +3,6 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 # Define a custom serializer that inherits from TokenObtainPairSerializer
@@ -84,7 +83,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     orders = serializers.SerializerMethodField()
-    # Image field: writable for create/update, uses get_image method for reading
     image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
@@ -167,9 +165,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Override to use get_image method for reading"""
         response = super().to_representation(instance)
-        # Replace the image field with the result from get_image method
         response['image'] = self.get_image(instance)
-        response['user'] = UserSerializer(instance.user).data
+        response['user'] = UserSerializer(instance.user, context=self.context).data
         return response
     
 

@@ -4,7 +4,7 @@ import { API_BASE_URL } from "./constants";
 
 // Create an instance of Axios and store it in the 'apiInstance' variable. This instance will have specific configuration options.
 const apiInstance = axios.create({
-  // Set the base URL for this instance. All requests made using this instance will have this URL as their starting point.
+  // Uses API_BASE_URL from constants (local demo or production).
   baseURL: API_BASE_URL,
 
   // Set a timeout for requests made using this instance. Increased to 60 seconds for slower connections/backend.

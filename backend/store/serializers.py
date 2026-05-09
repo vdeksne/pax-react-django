@@ -5,6 +5,7 @@ from rest_framework.validators import UniqueValidator
 from store.models import CancelledOrder, Cart, CartOrderItem, Notification, CouponUsers, Product, Tag ,Category, DeliveryCouriers, CartOrder, Gallery, Brand, ProductFaq, Review,  Specification, Coupon, Color, Size, Address, Wishlist, Vendor
 from addon.models import ConfigSettings
 from store.models import Gallery
+from store.absolute_media import AbsoluteMediaField
 from userauths.serializer import ProfileSerializer, UserSerializer
 
 class ConfigSettingsSerializer(serializers.ModelSerializer):
@@ -17,52 +18,13 @@ class ConfigSettingsSerializer(serializers.ModelSerializer):
 # Define a serializer for the Category model
 class CategorySerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
-    
+    image = AbsoluteMediaField(read_only=True, allow_null=True)
+
     class Meta:
         model = Category
         fields = '__all__'
-    
-    def get_image(self, obj):
-        request = self.context.get('request')
-        if obj.image and hasattr(obj.image, 'name') and obj.image.name:
-            # Skip default placeholder images that were never actually uploaded
-            default_names = ['category.jpg', 'product.jpg', 'brand.jpg', 'gallery.jpg', 'shop-image.jpg']
-            if obj.image.name in default_names:
-                return None
-            
-            try:
-                # Get the URL from the storage backend
-                image_url = obj.image.url
-                if image_url:
-                    from django.conf import settings
-                    
-                    # Backward compatibility: If URL points to /media/ but file might be in /static/
-                    # Many existing files were uploaded to static/ before the storage change
-                    if '/media/' in image_url and hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN'):
-                        # For backward compatibility, use static path for existing files
-                        static_url = image_url.replace('/media/', '/static/')
-                        image_url = static_url
-                    
-                    # If URL is relative, make it absolute
-                    if image_url.startswith('/'):
-                        if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
-                            image_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}{image_url}"
-                    
-                    if request:
-                        return request.build_absolute_uri(image_url) if not image_url.startswith('http') else image_url
-                    return image_url
-            except (ValueError, AttributeError, Exception) as e:
-                # Log the error for debugging
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error getting image URL for category {obj.id}: {e}")
-                pass
-        return None
-    
+
     def get_products(self, obj):
-        # Optimize: Only get products if needed (for detail views)
-        # For list views, this method might not be called, but if it is, optimize the query
         products = Product.objects.filter(category=obj).only('id', 'title', 'slug', 'price', 'image')
         return ProductListSerializer(products, many=True, context=self.context).data
 
@@ -74,95 +36,18 @@ class TagSerializer(serializers.ModelSerializer):
 
 # Define a serializer for the Brand model
 class BrandSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
-    
+    image = AbsoluteMediaField(read_only=True, allow_null=True)
+
     class Meta:
         model = Brand
         fields = '__all__'
-    
-    def get_image(self, obj):
-        request = self.context.get('request')
-        if obj.image and hasattr(obj.image, 'name') and obj.image.name:
-            # Skip default placeholder images that were never actually uploaded
-            default_names = ['brand.jpg', 'category.jpg', 'product.jpg', 'gallery.jpg', 'shop-image.jpg']
-            if obj.image.name in default_names:
-                return None
-            
-            try:
-                # Get the URL from the storage backend
-                image_url = obj.image.url
-                if image_url:
-                    from django.conf import settings
-                    
-                    # Backward compatibility: If URL points to /media/ but file might be in /static/
-                    # Many existing files were uploaded to static/ before the storage change
-                    if '/media/' in image_url and hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN'):
-                        # For backward compatibility, use static path for existing files
-                        static_url = image_url.replace('/media/', '/static/')
-                        image_url = static_url
-                    
-                    # If URL is relative, make it absolute
-                    if image_url.startswith('/'):
-                        if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
-                            image_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}{image_url}"
-                    
-                    if request:
-                        return request.build_absolute_uri(image_url) if not image_url.startswith('http') else image_url
-                    return image_url
-            except (ValueError, AttributeError, Exception) as e:
-                # Log the error for debugging
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error getting image URL for brand {obj.id}: {e}")
-                pass
-        return None
-
-
         # Define a serializer for the Gallery model
 class GallerySerializer(serializers.ModelSerializer):
-    # Serialize the related Product model
-    image = serializers.SerializerMethodField()
+    image = AbsoluteMediaField(read_only=True, allow_null=True)
 
     class Meta:
         model = Gallery
         fields = '__all__'
-    
-    def get_image(self, obj):
-        request = self.context.get('request')
-        if obj.image and hasattr(obj.image, 'name') and obj.image.name:
-            # Skip default placeholder images that were never actually uploaded
-            default_names = ['gallery.jpg', 'category.jpg', 'product.jpg', 'brand.jpg', 'shop-image.jpg']
-            if obj.image.name in default_names:
-                return None
-            
-            try:
-                # Get the URL from the storage backend
-                image_url = obj.image.url
-                if image_url:
-                    from django.conf import settings
-                    
-                    # Backward compatibility: If URL points to /media/ but file might be in /static/
-                    # Many existing files were uploaded to static/ before the storage change
-                    if '/media/' in image_url and hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN'):
-                        # For backward compatibility, use static path for existing files
-                        static_url = image_url.replace('/media/', '/static/')
-                        image_url = static_url
-                    
-                    # If URL is relative, make it absolute
-                    if image_url.startswith('/'):
-                        if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
-                            image_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}{image_url}"
-                    
-                    if request:
-                        return request.build_absolute_uri(image_url) if not image_url.startswith('http') else image_url
-                    return image_url
-            except (ValueError, AttributeError, Exception) as e:
-                # Log the error for debugging
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error getting image URL for gallery {obj.id}: {e}")
-                pass
-        return None
 
 # Define a serializer for the Specification model
 class SpecificationSerializer(serializers.ModelSerializer):
@@ -180,48 +65,11 @@ class SizeSerializer(serializers.ModelSerializer):
 
 # Define a serializer for the Color model
 class ColorSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
+    image = AbsoluteMediaField(read_only=True, allow_null=True)
 
     class Meta:
         model = Color
         fields = '__all__'
-    
-    def get_image(self, obj):
-        request = self.context.get('request')
-        if obj.image and hasattr(obj.image, 'name') and obj.image.name:
-            # Skip default placeholder images that were never actually uploaded
-            default_names = ['gallery.jpg', 'category.jpg', 'product.jpg', 'brand.jpg', 'shop-image.jpg']
-            if obj.image.name in default_names:
-                return None
-            
-            try:
-                # Get the URL from the storage backend
-                image_url = obj.image.url
-                if image_url:
-                    from django.conf import settings
-                    
-                    # Backward compatibility: If URL points to /media/ but file might be in /static/
-                    # Many existing files were uploaded to static/ before the storage change
-                    if '/media/' in image_url and hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN'):
-                        # For backward compatibility, use static path for existing files
-                        static_url = image_url.replace('/media/', '/static/')
-                        image_url = static_url
-                    
-                    # If URL is relative, make it absolute
-                    if image_url.startswith('/'):
-                        if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
-                            image_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}{image_url}"
-                    
-                    if request:
-                        return request.build_absolute_uri(image_url) if not image_url.startswith('http') else image_url
-                    return image_url
-            except (ValueError, AttributeError, Exception) as e:
-                # Log the error for debugging
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error getting image URL for color {obj.id}: {e}")
-                pass
-        return None
 
 
 # Lightweight serializer for list views (without nested data)
@@ -328,14 +176,10 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 # Full serializer for detail views (with nested data)
 class ProductSerializer(serializers.ModelSerializer):
-    # Serialize related Category, Tag, and Brand models
-    # category = CategorySerializer(many=True, read_only=True)
-    # tags = TagSerializer(many=True, read_only=True)
     gallery = GallerySerializer(many=True, read_only=True)
     color = ColorSerializer(many=True, read_only=True)
     size = SizeSerializer(many=True, read_only=True)
     specification = SpecificationSerializer(many=True, read_only=True)
-    # Image field: writable for create/update, uses get_image method for reading
     image = serializers.ImageField(required=False, allow_null=True)
     # rating = serializers.IntegerField(required=False)
     
@@ -545,9 +389,7 @@ class CartOrderSerializer(serializers.ModelSerializer):
 
 
 class VendorSerializer(serializers.ModelSerializer):
-    # Serialize related CartOrderItem models
     user = UserSerializer(read_only=True)
-    # Image field: writable for create/update, uses get_image method for reading
     image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
