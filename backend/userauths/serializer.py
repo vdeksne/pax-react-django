@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from store.absolute_media import AbsoluteMediaField
 
 
 # Define a custom serializer that inherits from TokenObtainPairSerializer
@@ -83,7 +84,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     orders = serializers.SerializerMethodField()
-    image = serializers.ImageField(required=False, allow_null=True)
+    image = AbsoluteMediaField(read_only=True, allow_null=True)
 
     class Meta:
         model = Profile
@@ -94,78 +95,8 @@ class ProfileSerializer(serializers.ModelSerializer):
         orders = CartOrder.objects.filter(buyer=obj.user, payment_status="paid")
         return orders.count()
 
-    def get_image(self, obj):
-        request = self.context.get('request')
-        if obj.image:
-            # Check if image is a URL string (from Google OAuth) or a file
-            if isinstance(obj.image, str) and (obj.image.startswith('http://') or obj.image.startswith('https://')):
-                # It's an external URL, return it as-is
-                return obj.image
-            
-            # It's a file field
-            if hasattr(obj.image, 'name') and obj.image.name:
-                # Skip default placeholder images
-                default_names = ['default/default-user.jpg', 'default-user.jpg']
-                if obj.image.name in default_names:
-                    return None
-                
-                try:
-                    from django.conf import settings
-                    from backend.storages import MediaStorage, StaticStorage
-                    
-                    # Get the image name/path from the database
-                    image_name = obj.image.name
-                    
-                    # Check both static and media locations
-                    # Existing files are in static/, new files go to media/
-                    static_storage = StaticStorage()
-                    media_storage = MediaStorage()
-                    image_url = None
-                    
-                    # Check static location first (where existing files are)
-                    if static_storage.exists(image_name):
-                        image_url = static_storage.url(image_name)
-                    # Check media location (where new files are saved)
-                    elif media_storage.exists(image_name):
-                        image_url = media_storage.url(image_name)
-                    else:
-                        # File doesn't exist in either location, return None
-                        # Don't use obj.image.url as fallback - it might generate a URL for non-existent files
-                        import logging
-                        logger = logging.getLogger(__name__)
-                        logger.warning(f"Profile image file does not exist in S3: {image_name} for profile {obj.id}")
-                        return None
-                    
-                    # If URL is relative, make it absolute
-                    if image_url and image_url.startswith('/'):
-                        if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
-                            image_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}{image_url}"
-                    
-                    # Ensure the URL uses static/ for files that are actually in static/
-                    # If the file path contains 'accounts/users', it's likely in static/
-                    if image_url and 'accounts/users' in image_name:
-                        # Replace media/ with static/ if the URL has media/ prefix
-                        if '/media/' in image_url:
-                            image_url = image_url.replace('/media/', '/static/')
-                    
-                    if image_url:
-                        if request:
-                            return request.build_absolute_uri(image_url) if not image_url.startswith('http') else image_url
-                        return image_url
-                    
-                    return None
-                except (ValueError, AttributeError, Exception) as e:
-                    # Log the error for debugging
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.error(f"Error getting image URL for profile {obj.id}: {e}")
-                    return None
-        return None
-
     def to_representation(self, instance):
-        """Override to use get_image method for reading"""
         response = super().to_representation(instance)
-        response['image'] = self.get_image(instance)
         response['user'] = UserSerializer(instance.user, context=self.context).data
         return response
     

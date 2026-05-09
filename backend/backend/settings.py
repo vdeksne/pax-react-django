@@ -30,10 +30,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY", default='django-insecure-b*tuoe%^o+=^35$0fufrm=oamh^(o0tabn39(7ni12(i-oup+4')
+SECRET_KEY = 'django-insecure-b*tuoe%^o+=^35$0fufrm=oamh^(o0tabn39(7ni12(i-oup+4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool("DEBUG", default=False)
+DEBUG = True
 
 ALLOWED_HOSTS = [
     "desirable-communication-production.up.railway.app",
@@ -41,17 +41,12 @@ ALLOWED_HOSTS = [
     "localhost",
 ]
 CSRF_TRUSTED_ORIGINS = [
+
     'https://desirable-communication-production.up.railway.app',
     'http://127.0.0.1',
     'http://127.0.0.1:8000',
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://pax-connect.netlify.app',
 ]
-# Allow popups for Google OAuth and other third-party services
-# Set to 'unsafe-none' to allow Google OAuth popups to communicate properly
-# This is required for Google Sign-In to work with postMessage
-SECURE_CROSS_ORIGIN_OPENER_POLICY = 'unsafe-none'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
 
 # Application definition
@@ -83,7 +78,6 @@ INSTALLED_APPS = [
     'import_export',
     'anymail',
     'storages',
-    'tinymce',
 
 
 ]
@@ -141,24 +135,11 @@ else:
     db_from_env = dj_database_url.config(conn_max_age=600)
     DATABASES["default"].update(db_from_env)
 
-# Only use Railway PostgreSQL if DATABASE_URL is set and not using internal hostname
-# Internal Railway hostnames (like postgres.railway.internal) only work within Railway's network
-db_from_env = dj_database_url.config(conn_max_age=600, default=None)
-if db_from_env:
-    # Check if it's an internal Railway hostname (won't work locally)
-    db_host = db_from_env.get('HOST', '')
-    # On Railway, use PostgreSQL if it's not an internal hostname
-    # Railway provides external hostnames like switchyard.proxy.rlwy.net
-    if db_host and 'railway.internal' not in db_host:
-        # Use PostgreSQL from DATABASE_URL (external/public URL)
-        # Add connection pooling and retry settings for Railway
-        db_from_env['CONN_MAX_AGE'] = 600
-        db_from_env['OPTIONS'] = {
-            'connect_timeout': 10,
-            'options': '-c statement_timeout=30000'
-        }
-        DATABASES['default'] = db_from_env
-    # If it's an internal hostname, keep using SQLite for local development
+# Unconditional PostgreSQL merge (used before demo mode). Revive by setting DEMO_MODE=false and
+# merging DATABASE_URL into the default DB:
+# DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'db.sqlite3'}}
+# db_from_env = dj_database_url.config(conn_max_age=600)
+# DATABASES['default'].update(db_from_env)
 
 
 # Password validation
@@ -216,6 +197,7 @@ else:
     DEMO_REMOTE_MEDIA_BASE = env.str("DEMO_REMOTE_MEDIA_BASE", default="")
     DEMO_MEDIA_FALLBACK = ""
 
+
 if DEMO_MODE:
     AWS_ACCESS_KEY_ID = env.str("AWS_ACCESS_KEY_ID", default="")
     AWS_SECRET_ACCESS_KEY = env.str("AWS_SECRET_ACCESS_KEY", default="")
@@ -227,47 +209,29 @@ if DEMO_MODE:
     STATIC_URL = 'static/'
 else:
     # AWS Configs
-    try:
-        AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
-    except Exception:
-        AWS_ACCESS_KEY_ID = ""
+    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
 
-    try:
-        AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
-    except Exception:
-        AWS_SECRET_ACCESS_KEY = ""
+    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
 
-    try:
-        AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
-    except Exception:
-        AWS_STORAGE_BUCKET_NAME = ""
+    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
 
-    # Only use S3 if valid credentials are provided (not placeholders)
-    USE_S3 = (
-        AWS_ACCESS_KEY_ID
-        and AWS_SECRET_ACCESS_KEY
-        and AWS_STORAGE_BUCKET_NAME
-        and AWS_ACCESS_KEY_ID != "placeholder"
-        and AWS_SECRET_ACCESS_KEY != "placeholder"
-        and AWS_STORAGE_BUCKET_NAME != "placeholder"
-    )
+    AWS_S3_FILE_OVERWRITE = False
 
-    if USE_S3:
-        AWS_S3_FILE_OVERWRITE = False
-        AWS_DEFAULT_ACL = 'public-read'
-        AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
-        AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_DEFAULT_ACL = 'public-read'
 
-        STATIC_LOCATION = 'static'
-        STATICFILES_STORAGE = 'backend.storages.StaticStorage'
-        STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-        MEDIA_LOCATION = 'media'
-        DEFAULT_FILE_STORAGE = 'backend.storages.MediaStorage'
-        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIA_LOCATION}/'
-    else:
-        DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-        STATIC_URL = 'static/'
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+    AWS_LOCATION = 'static'
+
+    STATIC_LOCATION = 'static'
+
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
 
 
 # Default primary key field type
@@ -277,9 +241,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'userauths.User'
 
-# Site URL - Use production URL by default, allow override via env var
-# This is critical for Stripe payment redirects
-SITE_URL = env("SITE_URL", default="https://pax-connect.netlify.app")
+# Site URL
+SITE_URL = env("SITE_URL")
 
 # Stripe API Keys
 STRIPE_PUBLIC_KEY = env("STRIPE_PUBLIC_KEY")
@@ -305,40 +268,7 @@ EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
 DEFAULT_FROM_EMAIL = " viktorijadeksne@gmail.com"
 SERVER_EMAIL = " viktorijadeksne@gmail.com"
 
-# CORS Configuration
-# NOTE: CORS_ALLOW_ALL_ORIGINS and CORS_ALLOW_CREDENTIALS cannot both be True
-# If credentials are needed, use CORS_ALLOWED_ORIGINS instead
-# Fixed: Set CORS_ALLOW_CREDENTIALS to False to allow CORS_ALLOW_ALL_ORIGINS to work
-CORS_ALLOW_CREDENTIALS = False  # Set to False since we're not using credentials
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins in production
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://pax-connect.netlify.app",
-]
-# Additional CORS headers for better compatibility
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
-# Allow all methods
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 SIMPLE_JWT = {
@@ -377,12 +307,12 @@ SIMPLE_JWT = {
 JAZZMIN_SETTINGS = {
     "site_title": "Pax",
     "site_header": "Pax",
-    "site_brand": "Pax",
+    "site_brand": "Modern Marketplace ",
     "site_icon": "images/favicon.ico",
-    "site_logo": None,  # Logo removed - upload to S3 static/images/logos/logo.jpg if needed
+    "site_logo": "images/logos/logo.jpg",
     "welcome_sign": "Welcome To Pax",
     "copyright": "All right reserved to Pax",
-    "user_avatar": None,  # Avatar removed - upload to S3 static/images/photos/logo.jpg if needed
+    "user_avatar": "images/photos/logo.jpg",
     "topmenu_links": [
         {"name": "Dashboard", "url": "home",
             "permissions": ["auth.view_user"]},
