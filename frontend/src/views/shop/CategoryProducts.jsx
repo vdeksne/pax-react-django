@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import apiInstance from "../../utils/axios";
 import { isStaticDemo } from "../../utils/staticDemo";
 import { getStaticCategoryWithProducts } from "../../data/staticDemoCatalog";
@@ -45,7 +45,7 @@ function CategoryProducts() {
       formData.append("qty", 1);
       formData.append("price", product.price);
       formData.append("shipping_amount", product.shipping_amount);
-      formData.append("country", currentAddress.country);
+      formData.append("country", currentAddress?.country ?? "");
       formData.append("size", "No Size");
       formData.append("color", "No Color");
       formData.append("cart_id", cart_id);
@@ -92,24 +92,32 @@ function CategoryProducts() {
           <div className="row">
             {categoryProducts.map((product) => (
               <div className="col-lg-4 col-md-12 mb-4" key={product.id}>
-                <div className="card">
+                <div className="card h-100">
                   <div
                     className="bg-image hover-zoom ripple"
                     data-mdb-ripple-color="light"
                   >
-                    <img
-                      src={product.image}
-                      className="w-100"
-                      style={{
-                        width: "100px",
-                        height: "300px",
-                        objectFit: "cover",
-                      }}
-                      alt={product.title}
-                    />
+                    <Link to={`/detail/${product.slug}`}>
+                      <img
+                        src={product.image}
+                        className="w-100"
+                        style={{
+                          height: "300px",
+                          objectFit: "cover",
+                        }}
+                        alt={product.title}
+                      />
+                    </Link>
                   </div>
                   <div className="card-body">
-                    <h5 className="card-title">{product.title}</h5>
+                    <h5 className="card-title">
+                      <Link
+                        to={`/detail/${product.slug}`}
+                        className="text-dark text-decoration-none"
+                      >
+                        {product.title}
+                      </Link>
+                    </h5>
                     <p className="card-text">${product.price}</p>
                     <button
                       onClick={() => addToCart(product)}

@@ -25,8 +25,20 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_products(self, obj):
-        products = Product.objects.filter(category=obj)
-        return ProductSerializer(products, many=True, context=self.context).data
+        products = Product.objects.filter(
+            category=obj, status="published"
+        ).select_related("vendor", "category").order_by("-date")
+        return ProductListSerializer(products, many=True, context=self.context).data
+
+
+class CategoryListSerializer(serializers.ModelSerializer):
+    """Categories on the home page — no nested `products` (avoids N× heavy queries)."""
+
+    image = AbsoluteMediaField(read_only=True, allow_null=True)
+
+    class Meta:
+        model = Category
+        fields = ("id", "title", "slug", "image", "active")
 
 # Define a serializer for the Tag model
 class TagSerializer(serializers.ModelSerializer):

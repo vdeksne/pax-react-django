@@ -30,9 +30,11 @@ const CategoryList = ({ categories }) => {
       </section>
       <div className="d-flex justify-content-center flex-wrap gap-3">
         {categories.map((c) => (
-          <div
+          <Link
             key={c.id}
-            className="category-card"
+            to={`/category/${c.slug}`}
+            className="category-card text-dark text-decoration-none"
+            style={{ display: "block" }}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = "translateY(-5px)";
             }}
@@ -43,24 +45,23 @@ const CategoryList = ({ categories }) => {
             <img
               src={categoryImageUrl(c)}
               alt={c.title}
-              className="img-fluid"
+              className="img-fluid d-block mx-auto"
               style={{
                 width: "clamp(60px, 10vw, 100px)",
                 height: "clamp(60px, 10vw, 100px)",
                 objectFit: "contain",
               }}
             />
-            <Link
-              to={`/category/${c.slug}`}
-              className="text-dark text-decoration-none fw-bold"
+            <div
+              className="fw-bold text-center"
               style={{
                 fontSize: "clamp(0.9rem, 1.5vw, 1.1rem)",
-                textAlign: "center",
+                marginTop: "0.35rem",
               }}
             >
               {c.title}
-            </Link>
-          </div>
+            </div>
+          </Link>
         ))}
       </div>
     </>

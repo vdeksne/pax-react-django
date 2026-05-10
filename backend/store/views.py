@@ -25,7 +25,7 @@ from rest_framework.pagination import PageNumberPagination
 
 # Serializers
 from userauths.serializer import MyTokenObtainPairSerializer, RegisterSerializer
-from store.serializers import CancelledOrderSerializer, CartSerializer, CartOrderItemSerializer, CouponUsersSerializer, ProductSerializer, ProductListSerializer, TagSerializer ,CategorySerializer, DeliveryCouriersSerializer, CartOrderSerializer, GallerySerializer, BrandSerializer, ProductFaqSerializer, ReviewSerializer,  SpecificationSerializer, CouponSerializer, ColorSerializer, SizeSerializer, AddressSerializer, WishlistSerializer, ConfigSettingsSerializer
+from store.serializers import CancelledOrderSerializer, CartSerializer, CartOrderItemSerializer, CouponUsersSerializer, ProductSerializer, ProductListSerializer, TagSerializer ,CategorySerializer, CategoryListSerializer, DeliveryCouriersSerializer, CartOrderSerializer, GallerySerializer, BrandSerializer, ProductFaqSerializer, ReviewSerializer,  SpecificationSerializer, CouponSerializer, ColorSerializer, SizeSerializer, AddressSerializer, WishlistSerializer, ConfigSettingsSerializer
 
 # Models
 from userauths.models import User
@@ -76,7 +76,7 @@ class ConfigSettingsDetailView(generics.RetrieveAPIView):
     permission_classes = (AllowAny,)
 
 class CategoryListView(generics.ListAPIView):
-    serializer_class = CategorySerializer
+    serializer_class = CategoryListSerializer
     permission_classes = (AllowAny,)
     
     def get_queryset(self):
