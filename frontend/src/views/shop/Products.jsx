@@ -3,6 +3,11 @@ import "../../assets/css/pricing.css";
 import "../../assets/css/products.css";
 
 import apiInstance from "../../utils/axios";
+import { isStaticDemo } from "../../utils/staticDemo";
+import {
+  getStaticDemoProducts,
+  STATIC_DEMO_CATEGORIES,
+} from "../../data/staticDemoCatalog";
 import GetCurrentAddress from "../plugin/UserCountry";
 import UserData from "../plugin/UserData";
 import CartID from "../plugin/cartID";
@@ -26,7 +31,6 @@ function Products() {
   const [error, setError] = useState(null);
   const [totalCount, setTotalCount] = useState(0); // For backend pagination
 
-  const axios = apiInstance;
   const currentAddress = GetCurrentAddress();
   const userData = UserData();
   const cart_id = CartID();
@@ -77,6 +81,20 @@ function Products() {
           setLoading(false);
         }
       }, 30000); // 30 seconds max - reduced from 70s
+
+      if (isStaticDemo()) {
+        const all = getStaticDemoProducts();
+        const start = (currentPage - 1) * itemsPerPage;
+        if (isMounted) {
+          clearTimeout(maxLoadTime);
+          setTotalCount(all.length);
+          setProducts(all.slice(start, start + itemsPerPage));
+          setCategory(STATIC_DEMO_CATEGORIES);
+          setError(null);
+          setLoading(false);
+        }
+        return;
+      }
 
       try {
         // Use Promise.allSettled to handle partial failures gracefully

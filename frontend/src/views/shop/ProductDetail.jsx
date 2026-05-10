@@ -2,6 +2,8 @@ import { useContext, useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 
 import apiInstance from "../../utils/axios";
+import { isStaticDemo } from "../../utils/staticDemo";
+import { getStaticProductBySlug } from "../../data/staticDemoCatalog";
 import Addon from "../plugin/Addon";
 import GetCurrentAddress from "../plugin/UserCountry";
 import UserData from "../plugin/UserData";
@@ -47,6 +49,27 @@ function ProductDetail() {
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
+
+    if (isStaticDemo()) {
+      const p = getStaticProductBySlug(params.slug);
+      if (!isMounted) return;
+      if (p) {
+        setProduct(p);
+        setProductImage(p.image || "");
+        setGallery(p.gallery || []);
+        setSpecifications(p.specification || []);
+        setColor(p.color || []);
+        setSize(p.size || []);
+        setVendor(p.vendor || null);
+      } else {
+        setProduct(null);
+      }
+      setLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
     axios
       .get("products/" + params.slug)
       .then((res) => {
@@ -188,6 +211,10 @@ function ProductDetail() {
   // Fetch reviews for this product
   const fetchReviewData = useCallback(async () => {
     if (!product?.id) return;
+    if (isStaticDemo()) {
+      setReviews([]);
+      return;
+    }
     try {
       const res = await axios.get(`reviews/${product.id}/`);
       setReviews(res.data || []);

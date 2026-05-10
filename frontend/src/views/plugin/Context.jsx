@@ -8,6 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import apiInstance from "../../utils/axios";
+import { isStaticDemo } from "../../utils/staticDemo";
 import UserData from "./UserData";
 import CartID from "./cartID";
 
@@ -28,6 +29,10 @@ export const CartProvider = ({ children }) => {
   const userId = useMemo(() => userData?.user_id || null, [userData?.user_id]);
 
   const fetchCartCount = useCallback(async () => {
+    if (isStaticDemo()) {
+      setCartCount(0);
+      return;
+    }
     if (!cart_id || fetchingRef.current) return;
 
     // Check if we've already fetched for this combination

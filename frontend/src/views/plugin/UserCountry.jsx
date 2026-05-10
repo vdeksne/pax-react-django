@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { API_BASE_URL } from "../../utils/constants";
+import { isStaticDemo } from "../../utils/staticDemo";
 
 // This functional component, GetCurrentAddress, is responsible for retrieving and displaying the user's current address based on their geolocation coordinates.
 
@@ -10,6 +11,10 @@ function GetCurrentAddress() {
 
   // The 'useEffect' hook is used to execute side effects in function components. In this case, it's used to fetch the user's address based on geolocation when the component mounts (empty dependency array).
   useEffect(() => {
+    if (isStaticDemo()) {
+      setAddress({ country: "" });
+      return;
+    }
     // Check if geolocation should be disabled via environment variable or localStorage
     // Note: In Vite, use import.meta.env instead of process.env
     const geolocationDisabled =
@@ -80,8 +85,7 @@ function GetCurrentAddress() {
                 // First, try using backend proxy if available (recommended approach)
                 // This avoids CORS issues
                 try {
-                  const backendUrl =
-                    API_BASE_URL || import.meta.env.VITE_API_URL || "";
+                  const backendUrl = API_BASE_URL || "";
 
                   if (backendUrl) {
                     // Create AbortController for timeout

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import apiInstance from "../../utils/axios";
+import { isStaticDemo } from "../../utils/staticDemo";
+import { getStaticCategoryWithProducts } from "../../data/staticDemoCatalog";
 import Swal from "sweetalert2";
 import GetCurrentAddress from "../plugin/UserCountry";
 import UserData from "../plugin/UserData";
@@ -17,6 +19,12 @@ function CategoryProducts() {
 
   useEffect(() => {
     const fetchCategoryProducts = async () => {
+      if (isStaticDemo()) {
+        const data = getStaticCategoryWithProducts(slug);
+        setCategory(data);
+        setCategoryProducts(data?.products || []);
+        return;
+      }
       try {
         const response = await axios.get(`category/${slug}/`);
         setCategory(response.data);
@@ -27,7 +35,7 @@ function CategoryProducts() {
     };
 
     fetchCategoryProducts();
-  }, [slug]);
+  }, [slug, axios]);
 
   const addToCart = async (product) => {
     try {

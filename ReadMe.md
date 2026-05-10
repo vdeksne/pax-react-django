@@ -118,7 +118,7 @@ E-commerce Platform. A modern e-commerce platform built with React and Django, f
 
    The load script runs **`download_demo_media --recover-missing`**, which reads every `image` path in `demo/shop_demo_fixture.json`, then tries: **`--from-dir`** (if set), **S3**, then **HTTPS**. Files land in `backend/media/`. **`--recover-missing`** fills paths that are gone from S3 by copying **stand-in** files from whatever images you already have locally (not the real lost originals—use **`--from-dir`** with a real backup for that). Re-run anytime (existing non-empty files are skipped). Anything still missing after that uses Picsum (`DEMO_MEDIA_FALLBACK`).
 
-   Point the frontend at `http://127.0.0.1:8000/api/v1/` (see `frontend/src/utils/constants.js`). With `DEMO_MODE`, images that are not under `backend/media/` use **placeholder photos** by default (`DEMO_MEDIA_FALLBACK=picsum`, stable per file path). To try real files from a public bucket instead, set `DEMO_MEDIA_FALLBACK=s3` and `DEMO_REMOTE_MEDIA_BASE=…`.
+   Point the frontend at the API: locally use `yarn start` (proxied `/api/v1/`). On Netlify, set `VITE_API_BASE_URL` or use the bundled `netlify.toml` proxy to Railway. With `DEMO_MODE`, images that are not under `backend/media/` use **placeholder photos** by default (`DEMO_MEDIA_FALLBACK=picsum`, stable per file path). To try real files from a public bucket instead, set `DEMO_MEDIA_FALLBACK=s3` and `DEMO_REMOTE_MEDIA_BASE=…`.
 
    Demo logins use password **`demo`** (for example `vendor@demo.pax.shop` / `demo`). For Railway/production again, set `DEMO_MODE=False` so `DATABASE_URL` is used.
 
@@ -143,8 +143,14 @@ E-commerce Platform. A modern e-commerce platform built with React and Django, f
    DATABASE_URL=postgresql://user:password@localhost:5432/paxshop
    ```
 
-   Frontend (.env):
+   **Netlify static demo (no Railway DB):** In `frontend/netlify.toml`, `VITE_STATIC_DEMO=true` is set under `[build.environment]`. The UI loads bundled products/categories and images from `frontend/public/demo/`. Turn it off and restore an `/api/*` proxy (or `VITE_API_BASE_URL`) when you want a real backend again.
 
-   ```
-   REACT_APP_API_URL=http://localhost:8000
+   Frontend (Vite — use `VITE_*`, not `REACT_APP_*`):
+
+   - **Local:** no file needed; `yarn start` uses `/api/v1/` and proxies to Django (see `vite.config.js`).
+   - **Netlify:** either rely on `frontend/netlify.toml` (proxy `/api/*` to your Railway URL), **or** set build env `VITE_API_BASE_URL=https://your-api.host/api/v1/` and **remove** the proxy rule if you prefer direct API calls (then enable CORS for your Netlify URL on Django).
+
+   ```bash
+   # Optional — direct API URL for production build (e.g. Vercel, or Netlify without proxy)
+   VITE_API_BASE_URL=https://your-backend.example.com/api/v1/
    ```

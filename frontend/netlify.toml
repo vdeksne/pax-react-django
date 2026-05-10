@@ -1,7 +1,18 @@
 [build]
   command = "yarn build"
   publish = "dist"
-  base = "frontend"
+
+[build.environment]
+  # Bundled demo catalog + /demo/* images — no Django or database on Netlify.
+  # Remove this line (or set to false) when you want the live API again.
+  VITE_STATIC_DEMO = "true"
+
+# Optional: proxy /api to Django when VITE_STATIC_DEMO is off. Not used for static demo builds.
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://desirable-communication-production.up.railway.app/api/:splat"
+#   status = 200
+#   force = true
 
 [[redirects]]
   from = "/*"
